@@ -5,13 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AirShare - Secure File Transfer</title>
 
-    <!-- Custom Favicon (Replaces Globe Icon in Browser Tab) -->
+    <!-- Custom Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
 
     <!-- Google Fonts & FontAwesome Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
+    <!-- QR Code Generator & Reader Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+
     <style>
         :root {
             --primary: #4f46e5;
@@ -101,7 +105,6 @@
 
         .drop-zone:hover { border-color: var(--primary); background: rgba(79, 70, 229, 0.08); }
 
-        /* File List Container */
         .file-list {
             margin-bottom: 12px;
             display: flex;
@@ -187,7 +190,22 @@
         .pin-code { font-size: 2.2rem; font-weight: 800; letter-spacing: 8px; color: var(--success); margin: 8px 0; }
         .timer-badge { font-size: 0.85rem; font-weight: 700; color: var(--danger); background: rgba(239, 68, 68, 0.15); padding: 4px 12px; border-radius: 20px; display: inline-block; }
 
-        /* Same-Page Error Banner */
+        .qr-wrapper {
+            background: #ffffff;
+            padding: 12px;
+            border-radius: 12px;
+            display: inline-block;
+            margin: 12px 0;
+        }
+
+        .scanner-container {
+            display: none;
+            margin-top: 16px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--card-border);
+        }
+
         .error-banner {
             display: none;
             background: rgba(239, 68, 68, 0.15);
@@ -200,7 +218,6 @@
             text-align: center;
         }
 
-        /* Feedback Section */
         .feedback-section {
             width: 100%;
             max-width: 900px;
@@ -257,7 +274,7 @@
             <div class="card-title">
                 <i class="fa-solid fa-paper-plane" style="color: var(--accent);"></i> Send Files
             </div>
-            <p class="card-desc">Upload files to generate a 60-second security PIN.</p>
+            <p class="card-desc">Upload files to generate a 30-second security PIN & QR Code.</p>
 
             <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
                 <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: var(--accent);"></i>
@@ -272,13 +289,20 @@
             </button>
 
             <button class="btn" onclick="uploadFiles()">
-                <i class="fa-solid fa-key"></i> Generate Security PIN
+                <i class="fa-solid fa-key"></i> Generate Security PIN & QR
             </button>
 
             <div id="pinBox" class="pin-display-box">
                 <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">YOUR 6-DIGIT PIN</span>
                 <div id="pinDisplay" class="pin-code">------</div>
-                <div id="timerDisplay" class="timer-badge">Expiring in 60s</div>
+
+                <!-- QR Code Display Container -->
+                <div class="qr-wrapper">
+                    <div id="qrcode"></div>
+                </div>
+                
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;">Scan QR Code to download directly</p>
+                <div id="timerDisplay" class="timer-badge">Expiring in 30s</div>
             </div>
         </div>
 
@@ -287,7 +311,7 @@
             <div class="card-title">
                 <i class="fa-solid fa-download" style="color: var(--primary);"></i> Download Files
             </div>
-            <p class="card-desc">Enter the 6-digit PIN to download shared files.</p>
+            <p class="card-desc">Enter 6-digit PIN or scan QR Code to download.</p>
 
             <div class="pin-input-group">
                 <input type="text" id="pinInput" placeholder="ENTER 6-DIGIT PIN" maxlength="6" autocomplete="off">
@@ -296,6 +320,14 @@
             <button class="btn" style="background: linear-gradient(135deg, #06b6d4, #0284c7);" onclick="downloadFile()">
                 <i class="fa-solid fa-circle-down"></i> Retrieve Files
             </button>
+
+            <!-- Scan QR Code Button -->
+            <button class="btn" style="background: rgba(255,255,255,0.1); border: 1px solid var(--card-border); margin-top: 10px;" onclick="toggleQrScanner()">
+                <i class="fa-solid fa-qrcode"></i> Scan QR Code
+            </button>
+
+            <!-- Camera Scanner UI -->
+            <div id="reader" class="scanner-container"></div>
 
             <div id="downloadError" class="error-banner"></div>
         </div>
@@ -330,6 +362,7 @@
     <script>
         let selectedFiles = [];
         let countdownInterval;
+        let html5QrcodeScanner = null;
 
         function handleFileSelect(event) {
             const files = Array.from(event.target.files);
@@ -393,9 +426,21 @@
             const pinBox = document.getElementById('pinBox');
             const pinDisplay = document.getElementById('pinDisplay');
             const timerDisplay = document.getElementById('timerDisplay');
+            const qrContainer = document.getElementById('qrcode');
 
             pinBox.style.display = 'block';
             pinDisplay.innerText = pin;
+
+            // Generate QR Code containing download URL
+            qrContainer.innerHTML = '';
+            const downloadUrl = `${window.location.origin}/download/${pin}`;
+            new QRCode(qrContainer, {
+                text: downloadUrl,
+                width: 130,
+                height: 130,
+                colorDark: "#0f172a",
+                colorLight: "#ffffff"
+            });
 
             let timeLeft = durationSeconds;
             timerDisplay.innerText = `Expiring in ${timeLeft}s`;
@@ -409,12 +454,48 @@
                 } else {
                     clearInterval(countdownInterval);
                     pinDisplay.innerText = '------';
+                    qrContainer.innerHTML = '<div style="color: red; font-size: 0.8rem;">Expired</div>';
                     timerDisplay.innerText = '⚠️ PIN Expired! File Deleted.';
                 }
             }, 1000);
         }
 
-        // Same-Page Retrieve File (Prevents raw JSON page navigation)
+        // Camera QR Code Scanner Function
+        function toggleQrScanner() {
+            const readerDiv = document.getElementById('reader');
+            
+            if (readerDiv.style.display === 'block') {
+                if (html5QrcodeScanner) {
+                    html5QrcodeScanner.clear();
+                }
+                readerDiv.style.display = 'none';
+                return;
+            }
+
+            readerDiv.style.display = 'block';
+            html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: { width: 200, height: 200 } });
+            
+            html5QrcodeScanner.render((decodedText) => {
+                // Extract PIN if full URL is scanned
+                let pin = decodedText;
+                if (decodedText.includes('/download/')) {
+                    const parts = decodedText.split('/download/');
+                    pin = parts[parts.length - 1].trim();
+                }
+
+                if (pin && pin.length === 6 && !isNaN(pin)) {
+                    document.getElementById('pinInput').value = pin;
+                    html5QrcodeScanner.clear();
+                    readerDiv.style.display = 'none';
+                    downloadFile();
+                } else {
+                    alert('Invalid QR code scanned.');
+                }
+            }, (error) => {
+                // Ignore silent scan errors
+            });
+        }
+
         async function downloadFile() {
             const pin = document.getElementById('pinInput').value.trim();
             const errorBanner = document.getElementById('downloadError');
@@ -436,13 +517,11 @@
                     return;
                 }
 
-                // File download trigger without leaving page
                 const blob = await response.blob();
                 const downloadUrl = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = downloadUrl;
                 
-                // Content-Disposition header se filename extract karein
                 const disposition = response.headers.get('content-disposition');
                 let filename = 'AirShare-Download';
                 if (disposition && disposition.includes('filename=')) {
