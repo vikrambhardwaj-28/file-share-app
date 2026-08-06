@@ -219,6 +219,35 @@
             text-align: center;
         }
 
+        .retrieved-files-box {
+            display: none;
+            margin-top: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .retrieved-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            margin-top: 8px;
+            font-size: 0.85rem;
+        }
+
+        .retrieved-item a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
         .feedback-section {
             width: 100%;
             max-width: 900px;
@@ -328,6 +357,12 @@
             <div id="reader" class="scanner-container"></div>
 
             <div id="downloadError" class="error-banner"></div>
+
+            <!-- List of Retrieved Files -->
+            <div id="retrievedFilesBox" class="retrieved-files-box">
+                <p style="font-size: 0.85rem; font-weight: 700; color: var(--success);"><i class="fa-solid fa-circle-check"></i> Files Found (<span id="retrievedCount">0</span>):</p>
+                <div id="retrievedItemsList"></div>
+            </div>
         </div>
     </div>
 
@@ -440,7 +475,6 @@
             pinDisplay.innerText = pin;
 
             qrContainer.innerHTML = '';
-            // Generate QR Code containing website auto-download parameter link
             const downloadUrl = `${window.location.origin}/?pin=${pin}`;
             new QRCode(qrContainer, {
                 text: downloadUrl,
@@ -508,7 +542,13 @@
         async function downloadFile() {
             const pin = document.getElementById('pinInput').value.trim();
             const errorBanner = document.getElementById('downloadError');
+            const retrievedBox = document.getElementById('retrievedFilesBox');
+            const retrievedList = document.getElementById('retrievedItemsList');
+            const retrievedCount = document.getElementById('retrievedCount');
+
             errorBanner.style.display = 'none';
+            retrievedBox.style.display = 'none';
+            retrievedList.innerHTML = '';
 
             if (pin.length !== 6 || isNaN(pin)) {
                 errorBanner.innerText = '⚠️ Please enter a valid 6-digit PIN.';
@@ -526,7 +566,24 @@
                     return;
                 }
 
-                // Download all files individually in original format
+                // Display file list on screen
+                retrievedCount.innerText = metaData.files.length;
+                retrievedBox.style.display = 'block';
+
+                metaData.files.forEach(fileInfo => {
+                    const fileUrl = `/download/${pin}/${fileInfo.index}`;
+                    const item = document.createElement('div');
+                    item.className = 'retrieved-item';
+                    item.innerHTML = `
+                        <span><i class="fa-regular fa-file"></i> ${fileInfo.originalname}</span>
+                        <a href="${fileUrl}" download="${fileInfo.originalname}">
+                            <i class="fa-solid fa-download"></i> Download
+                        </a>
+                    `;
+                    retrievedList.appendChild(item);
+                });
+
+                // Auto-trigger download for all files
                 for (let i = 0; i < metaData.files.length; i++) {
                     const fileInfo = metaData.files[i];
                     const downloadUrl = `/download/${pin}/${fileInfo.index}`;
@@ -539,7 +596,7 @@
                     a.remove();
 
                     if (i < metaData.files.length - 1) {
-                        await new Promise(resolve => setTimeout(resolve, 300));
+                        await new Promise(resolve => setTimeout(resolve, 400));
                     }
                 }
 
