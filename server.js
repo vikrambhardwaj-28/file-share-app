@@ -1,123 +1,95 @@
 const express = require('express');
 const multer = require('multer');
+const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const cors = require('cors');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-// Middleware Setup
+// Enable CORS and JSON body parsing
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// Uploads directory check and creation
+// Ensure 'uploads' directory exists
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir);
+    fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Multer Disk Storage Config
+// Multer storage configuration
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'uploads/'),
+    destination: (req, file, cb) => cb(null, uploadDir),
     filename: (req, file, cb) => {
-        const uniqueName = Date.now() + '-' + file.originalname;
-        cb(null, uniqueName);
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, `${uniqueSuffix}-${file.originalname}`);
     }
 });
+const upload = multer({ storage });
 
-const upload = multer({ 
-    storage,
-    limits: { fileSize: 100 * 1024 * 1024 } // 100 MB max file size limit
-});
+// In-memory store for PIN metadata
+const activePins = {};
 
-// In-Memory Data Stores
-const fileDatabase = {};
-const feedbackDatabase = [];
+/**
+ * POST /upload
+ * Handles file upload, generates a 6-digit PIN, and schedules auto-deletion in 30 seconds.
+ */
+app.post('/upload', upload.single('file'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ success: false, message: 'No file uploaded.' });
+    }
 
-// ------------------- API ROUTES ------------------- //
+    // Generate a secure 6-digit PIN (100000 - 999999)
+    const pin = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiryDurationMs = 30000; // 30 seconds
+    const expiresAt = Date.now() + expiryDurationMs;
 
-// 1. Multiple Files Upload Route (Max 20 files at once)
-app.post('/upload', upload.array('files', 20), (req, res) => {
-    try {
-        if (!req.files || req.files.length === 0) {
-            return res.status(400).json({ error: 'No files uploaded' });
+    // Save file metadata
+    activePins[pin] = {
+        filePath: req.file.path,
+        originalName: req.file.originalname,
+        expiresAt
+    };
+
+    // Schedule auto-deletion from disk and memory after 30 seconds
+    setTimeout(() => {
+        if (activePins[pin]) {
+            fs.unlink(activePins[pin].filePath, (err) => {
+                if (err && err.code !== 'ENOENT') {
+                    console.error(`[Error] Failed to delete file for PIN ${pin}:`, err);
+                }
+            });
+            delete activePins[pin];
+            console.log(`[Security Purge] PIN ${pin} and associated file expired.`);
         }
+    }, expiryDurationMs);
 
-        // Random 4-digit PIN generate karein
-        const pin = Math.floor(1000 + Math.random() * 9000).toString();
-        
-        fileDatabase[pin] = req.files.map(file => ({
-            filePath: file.path,
-            originalName: file.originalname,
-            size: file.size
-        }));
-
-        console.log(`[UPLOAD] PIN: ${pin} | Files: ${req.files.length}`);
-        res.json({ pin, count: req.files.length });
-
-    } catch (err) {
-        console.error('Upload Error:', err);
-        res.status(500).json({ error: 'Server upload failed' });
-    }
-});
-
-// 2. PIN se Files List Retrieve karne ka Route
-app.get('/files/:pin', (req, res) => {
-    const pin = req.params.pin;
-    const files = fileDatabase[pin];
-
-    if (!files) {
-        return res.status(404).json({ error: 'Invalid PIN or files expired' });
-    }
-
-    res.json({
-        files: files.map((file, index) => ({
-            id: index,
-            name: file.originalName,
-            size: (file.size / (1024 * 1024)).toFixed(2) + ' MB'
-        }))
+    return res.json({
+        success: true,
+        pin,
+        expiresInSeconds: 30
     });
 });
 
-// 3. Individual File Download Route
-app.get('/download/:pin/:index', (req, res) => {
-    const { pin, index } = req.params;
-    const files = fileDatabase[pin];
+/**
+ * GET /download/:pin
+ * Validates 6-digit PIN and serves file download if unexpired.
+ */
+app.get('/download/:pin', (req, res) => {
+    const { pin } = req.params;
+    const record = activePins[pin];
 
-    if (!files || !files[index]) {
-        return res.status(404).send('File not found or expired');
+    if (!record || Date.now() > record.expiresAt) {
+        return res.status(410).json({
+            success: false,
+            message: 'Invalid or expired PIN. Files are permanently deleted after 30 seconds.'
+        });
     }
 
-    const targetFile = files[index];
-    res.download(targetFile.filePath, targetFile.originalName);
+    return res.download(record.filePath, record.originalName);
 });
 
-// 4. Feedback Submit Route
-app.post('/feedback', (req, res) => {
-    const { message } = req.body;
-    if (!message || message.trim() === '') {
-        return res.status(400).json({ error: 'Feedback message cannot be empty' });
-    }
-
-    const newFeedback = {
-        id: Date.now(),
-        message: message.trim(),
-        timestamp: new Date().toLocaleString()
-    };
-
-    feedbackDatabase.push(newFeedback);
-    
-    console.log('\n================ NEW FEEDBACK RECEIVED ================');
-    console.log(`Time: ${newFeedback.timestamp}`);
-    console.log(`Message: ${newFeedback.message}`);
-    console.log('=======================================================\n');
-
-    res.json({ success: true, message: 'Feedback recorded successfully!' });
-});
-
-// Server Start
 app.listen(PORT, () => {
-    console.log(`\n>>> AirShare Server running at http://localhost:${PORT} <<<`);
+    console.log(`Server running at http://localhost:${PORT}`);
 });
