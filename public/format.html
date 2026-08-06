@@ -1,79 +1,614 @@
-<script>
-    let selectedFile = null;
-    let countdownInterval;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirFormat - Convert File Formats</title>
 
-    function handleFormatSelect(e) {
-        if (e.target.files.length > 0) {
-            selectedFile = e.target.files[0];
-            document.getElementById('selectedFileInfo').style.display = 'block';
-            document.getElementById('fmtFileName').innerText = selectedFile.name;
+    <!-- Custom Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+
+    <!-- Google Fonts & FontAwesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- QR Code Generator Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --accent: #06b6d4;
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+            --card-bg: rgba(15, 23, 42, 0.65);
+            --card-border: rgba(255, 255, 255, 0.12);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --danger: #ef4444;
+            --success: #10b981;
         }
-    }
 
-    function startFormatProcess() {
-        if (!selectedFile) return alert('Please select a file to convert.');
-        
-        const targetFormat = document.getElementById('targetFormatSelect').value;
-        const formData = new FormData();
-        formData.append('files', selectedFile);
-        formData.append('targetFormat', targetFormat); // Send target format to server
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
 
-        const progressWrapper = document.getElementById('progressWrapper');
-        const progressBarFill = document.getElementById('progressBarFill');
-        const uploadPercent = document.getElementById('uploadPercent');
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 15px;
+        }
 
-        progressWrapper.style.display = 'block';
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', '/format', true);
+        .navbar {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            margin-bottom: 10px;
+        }
 
-        xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) {
-                const percent = Math.round((e.loaded / e.total) * 100);
-                progressBarFill.style.width = percent + '%';
-                uploadPercent.innerText = percent + '%';
-            }
-        };
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
 
-        xhr.onload = function() {
-            progressWrapper.style.display = 'none';
-            if (xhr.status === 200) {
-                const data = JSON.parse(xhr.responseText);
-                if (data.success) {
-                    displayFormatResults(data.pin, data.expiresInSeconds);
+        .wide-nav-bar {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 8px;
+            display: flex;
+            gap: 10px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tab:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-main);
+        }
+
+        .nav-tab.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            color: white;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.35);
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 900px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(99, 102, 241, 0.4);
+            box-shadow: 0 25px 60px rgba(79, 70, 229, 0.25);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-desc { font-size: 0.875rem; color: var(--text-muted); margin-bottom: 20px; }
+
+        .drop-zone {
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 14px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.02);
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .drop-zone:hover { border-color: #c084fc; background: rgba(192, 132, 252, 0.08); }
+
+        input[type="file"] { display: none; }
+
+        .format-select-box {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--card-border);
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .format-select-box select {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            outline: none;
+            font-weight: 600;
+        }
+
+        .format-select-box select option {
+            background: #0f172a;
+            color: white;
+        }
+
+        .btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover { opacity: 0.95; transform: scale(0.99); }
+
+        .progress-wrapper {
+            display: none;
+            margin-bottom: 16px;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .progress-bar-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #c084fc, var(--primary));
+            transition: width 0.2s ease;
+        }
+
+        .result-box {
+            display: none;
+            background: rgba(192, 132, 252, 0.08);
+            border: 1px solid rgba(192, 132, 252, 0.3);
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .pin-code {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: 6px;
+            color: var(--success);
+            margin: 6px 0;
+        }
+
+        .timer-badge {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--danger);
+            background: rgba(239, 68, 68, 0.15);
+            padding: 6px 14px;
+            border-radius: 20px;
+            display: inline-block;
+            position: relative;
+            animation: pulseRing 1.5s infinite;
+        }
+
+        @keyframes pulseRing {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .quick-action-btns {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .action-chip {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .action-chip:hover { background: rgba(255, 255, 255, 0.18); }
+
+        .feedback-section {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 25px 30px;
+            margin-bottom: 40px;
+        }
+
+        .feedback-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+        @media (max-width: 600px) { .feedback-form { grid-template-columns: 1fr; } }
+        .feedback-form input, .feedback-form textarea { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px; color: white; outline: none; }
+        .feedback-form textarea { grid-column: 1 / -1; resize: none; height: 80px; }
+        .feedback-form button { grid-column: 1 / -1; background: rgba(255,255,255,0.1); border: 1px solid var(--card-border); color: white; padding: 12px; border-radius: 10px; cursor: pointer; }
+
+        footer {
+            width: 100%;
+            max-width: 900px;
+            border-top: 1px solid var(--card-border);
+            padding-top: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            text-align: center;
+        }
+
+        .social-links { display: flex; gap: 20px; }
+        .social-icon {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-main); font-size: 1.2rem; text-decoration: none;
+        }
+        .social-icon.insta:hover { background: #e1306c; }
+        .social-icon.fb:hover { background: #1877f2; }
+        .social-icon.mail:hover { background: #ea4335; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="brand">
+            <i class="fa-solid fa-bolt" style="color: var(--accent);"></i> AirShare
+        </div>
+        <span style="font-size: 0.85rem; color: var(--text-muted);"><i class="fa-solid fa-shield-halved"></i> Encrypted Transfer</span>
+    </nav>
+
+    <!-- Horizontal Nav Bar -->
+    <div class="wide-nav-bar">
+        <a href="index.html" class="nav-tab">
+            <i class="fa-solid fa-share-nodes"></i> AirShare
+        </a>
+        <a href="compress.html" class="nav-tab">
+            <i class="fa-solid fa-file-zipper"></i> AirCompress
+        </a>
+        <a href="format.html" class="nav-tab active">
+            <i class="fa-solid fa-file-code"></i> AirFormat
+        </a>
+    </div>
+
+    <div class="main-container">
+        <!-- Left Card: Upload & Target Format Selection -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-file-code" style="color: #c084fc;"></i> Upload & Select Target Format
+            </div>
+            <p class="card-desc">Upload any file and convert it to your desired target extension.</p>
+
+            <div class="drop-zone" onclick="document.getElementById('fmtFile').click()">
+                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: #c084fc;"></i>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">Click or Drag file to convert</p>
+            </div>
+            <input type="file" id="fmtFile" onchange="handleFormatSelect(event)">
+
+            <div id="selectedFileInfo" style="display:none; font-size: 0.85rem; margin-bottom: 12px; color: var(--accent);">
+                Selected File: <strong id="fmtFileName">none</strong>
+            </div>
+
+            <div class="format-select-box">
+                <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px;">Convert To Target Format:</label>
+                <select id="targetFormatSelect">
+                    <optgroup label="Document & Text Formats">
+                        <option value="pdf">PDF (.pdf)</option>
+                        <option value="docx">DOCX (.docx)</option>
+                        <option value="txt">TXT (.txt)</option>
+                    </optgroup>
+                    <optgroup label="Image Formats">
+                        <option value="png">PNG (.png)</option>
+                        <option value="jpg">JPG (.jpg)</option>
+                        <option value="webp">WEBP (.webp)</option>
+                        <option value="svg">SVG (.svg)</option>
+                    </optgroup>
+                    <optgroup label="Audio / Video Formats">
+                        <option value="mp3">MP3 (.mp3)</option>
+                        <option value="wav">WAV (.wav)</option>
+                        <option value="mp4">MP4 (.mp4)</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div id="progressWrapper" class="progress-wrapper">
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                    <span>Converting Format...</span>
+                    <span id="uploadPercent">0%</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div id="progressBarFill" class="progress-bar-fill"></div>
+                </div>
+            </div>
+
+            <button class="btn" style="background: linear-gradient(135deg, #c084fc, #9333ea);" onclick="startFormatProcess()">
+                <i class="fa-solid fa-rotate"></i> Convert File Format
+            </button>
+        </div>
+
+        <!-- Right Card: Converted Details & Download/PIN Output -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-circle-check" style="color: var(--success);"></i> Converted Output Details
+            </div>
+            <p class="card-desc">Download converted file directly or share via PIN/QR Code.</p>
+
+            <div id="resultBox" class="result-box">
+                <p style="font-size: 0.85rem; color: var(--text-muted);">TARGET FORMAT: <span id="resTargetFmt" style="color:white; font-weight:bold; text-transform:uppercase;">PDF</span></p>
+
+                <div style="margin-top: 15px;">
+                    <a id="directDownloadBtn" href="#" download class="btn" style="background: linear-gradient(135deg, #10b981, #059669); text-decoration: none;">
+                        <i class="fa-solid fa-download"></i> Download Converted File
+                    </a>
+                </div>
+
+                <div style="margin-top: 15px; border-top: 1px dashed var(--card-border); padding-top: 15px;">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">SHARE PIN</span>
+                    <div id="pinDisplay" class="pin-code">------</div>
+
+                    <div class="quick-action-btns">
+                        <button class="action-chip" onclick="copyPin()"><i class="fa-regular fa-copy"></i> Copy PIN</button>
+                        <button class="action-chip" onclick="shareLink()"><i class="fa-solid fa-share-nodes"></i> Share Link</button>
+                    </div>
+
+                    <div style="background:white; padding:10px; border-radius:10px; display:inline-block; margin:8px 0;">
+                        <div id="qrcode"></div>
+                    </div>
+                    <div>
+                        <span id="timerDisplay" class="timer-badge">Expiring in 60s</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="emptyPlaceholder" style="text-align: center; padding: 40px 10px; color: var(--text-muted); font-size: 0.85rem;">
+                Upload a file, choose a target format, and click "Convert File Format" to view output and download options.
+            </div>
+        </div>
+    </div>
+
+    <!-- Persistent Feedback Section -->
+    <div class="feedback-section">
+        <div class="card-title">
+            <i class="fa-solid fa-comments" style="color: #c084fc;"></i> Send Us Your Feedback
+        </div>
+        <p class="card-desc">Have suggestions or facing issues? Let us know below.</p>
+        <form class="feedback-form" onsubmit="submitFeedback(event)">
+            <input type="text" id="fbName" placeholder="Your Name" required>
+            <input type="email" id="fbEmail" placeholder="Your Email" required>
+            <textarea id="fbMessage" placeholder="Type your message..." required></textarea>
+            <button type="submit" class="btn" style="background: rgba(255,255,255,0.1); border: 1px solid var(--card-border);">
+                <i class="fa-solid fa-paper-plane"></i> Submit Feedback
+            </button>
+        </form>
+    </div>
+
+    <!-- Persistent Footer -->
+    <footer>
+        <div class="social-links">
+            <a href="https://www.instagram.com/vikrm_bhardwaj?igsh=OWh4ZHprbW5rNTZv" target="_blank" class="social-icon insta"><i class="fa-brands fa-instagram"></i></a>
+            <a href="https://www.facebook.com/share/196jZuggxg/" target="_blank" class="social-icon fb"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="mailto:vikram.2872006@gmail.com" class="social-icon mail"><i class="fa-solid fa-envelope"></i></a>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Designed & Developed by <strong>Vikram Bhardwaj</strong></p>
+    </footer>
+
+    <script>
+        let selectedFile = null;
+        let countdownInterval;
+        let currentGeneratedPin = '';
+
+        function playSound(type) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                if (type === 'success') {
+                    osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.25);
+                } else if (type === 'expire') {
+                    osc.frequency.setValueAtTime(220, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.3);
                 }
-            } else {
-                alert('Format conversion failed.');
+                osc.start();
+                osc.stop(ctx.currentTime + 0.3);
+            } catch (e) {}
+        }
+
+        function handleFormatSelect(e) {
+            if (e.target.files.length > 0) {
+                selectedFile = e.target.files[0];
+                document.getElementById('selectedFileInfo').style.display = 'block';
+                document.getElementById('fmtFileName').innerText = selectedFile.name;
             }
-        };
-        xhr.send(formData);
-    }
+        }
 
-    function displayFormatResults(pin, durationSeconds) {
-        document.getElementById('emptyPlaceholder').style.display = 'none';
-        document.getElementById('resultBox').style.display = 'block';
+        function startFormatProcess() {
+            if (!selectedFile) return alert('Please select a file to convert.');
+            
+            const targetFormat = document.getElementById('targetFormatSelect').value;
+            const formData = new FormData();
+            formData.append('files', selectedFile);
+            formData.append('targetFormat', targetFormat);
 
-        const targetFmt = document.getElementById('targetFormatSelect').value;
-        document.getElementById('resTargetFmt').innerText = targetFmt;
+            const progressWrapper = document.getElementById('progressWrapper');
+            const progressBarFill = document.getElementById('progressBarFill');
+            const uploadPercent = document.getElementById('uploadPercent');
 
-        const nameParts = selectedFile.name.split('.');
-        nameParts.pop();
-        const convertedName = nameParts.join('.') + '.' + targetFmt;
+            progressWrapper.style.display = 'block';
+            progressBarFill.style.width = '0%';
 
-        const downloadUrl = `/download/${pin}/0`;
-        const dBtn = document.getElementById('directDownloadBtn');
-        dBtn.href = downloadUrl;
-        dBtn.download = convertedName;
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/format', true);
 
-        document.getElementById('pinDisplay').innerText = pin;
-        document.getElementById('qrcode').innerHTML = '';
-        new QRCode(document.getElementById('qrcode'), { text: `${window.location.origin}/index.html?pin=${pin}`, width: 110, height: 110 });
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    progressBarFill.style.width = percent + '%';
+                    uploadPercent.innerText = percent + '%';
+                }
+            };
 
-        let timeLeft = durationSeconds;
-        clearInterval(countdownInterval);
-        countdownInterval = setInterval(() => {
-            timeLeft--;
-            if (timeLeft > 0) document.getElementById('timerDisplay').innerText = `Expiring in ${timeLeft}s`;
-            else { clearInterval(countdownInterval); document.getElementById('pinDisplay').innerText = '------'; document.getElementById('timerDisplay').innerText = '⚠️ PIN Expired!'; }
-        }, 1000);
-    }
-</script>
+            xhr.onload = function() {
+                progressWrapper.style.display = 'none';
+                if (xhr.status === 200) {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.success) {
+                        playSound('success');
+                        displayFormatResults(data.pin, data.expiresInSeconds);
+                    }
+                } else {
+                    alert('Format conversion failed.');
+                }
+            };
+
+            xhr.onerror = function() {
+                progressWrapper.style.display = 'none';
+                alert('Connection error while converting format.');
+            };
+
+            xhr.send(formData);
+        }
+
+        function displayFormatResults(pin, durationSeconds) {
+            currentGeneratedPin = pin;
+            document.getElementById('emptyPlaceholder').style.display = 'none';
+            document.getElementById('resultBox').style.display = 'block';
+
+            const targetFmt = document.getElementById('targetFormatSelect').value;
+            document.getElementById('resTargetFmt').innerText = targetFmt;
+
+            const nameParts = selectedFile.name.split('.');
+            nameParts.pop();
+            const convertedName = nameParts.join('.') + '.' + targetFmt;
+
+            const downloadUrl = `/download/${pin}/0`;
+            const dBtn = document.getElementById('directDownloadBtn');
+            dBtn.href = downloadUrl;
+            dBtn.download = convertedName;
+
+            document.getElementById('pinDisplay').innerText = pin;
+            document.getElementById('qrcode').innerHTML = '';
+            new QRCode(document.getElementById('qrcode'), {
+                text: `${window.location.origin}/index.html?pin=${pin}`,
+                width: 110,
+                height: 110,
+                colorDark: "#0f172a",
+                colorLight: "#ffffff"
+            });
+
+            let timeLeft = durationSeconds;
+            document.getElementById('timerDisplay').innerText = `Expiring in ${timeLeft}s`;
+
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft > 0) {
+                    document.getElementById('timerDisplay').innerText = `Expiring in ${timeLeft}s`;
+                } else {
+                    clearInterval(countdownInterval);
+                    playSound('expire');
+                    document.getElementById('pinDisplay').innerText = '------';
+                    document.getElementById('timerDisplay').innerText = '⚠️ PIN Expired! File Deleted.';
+                }
+            }, 1000);
+        }
+
+        function copyPin() {
+            if (currentGeneratedPin) {
+                navigator.clipboard.writeText(currentGeneratedPin);
+                alert('PIN Copied to Clipboard!');
+            }
+        }
+
+        function shareLink() {
+            if (currentGeneratedPin) {
+                const link = `${window.location.origin}/index.html?pin=${currentGeneratedPin}`;
+                navigator.clipboard.writeText(link);
+                alert('Shareable Download Link Copied!');
+            }
+        }
+
+        function submitFeedback(e) {
+            e.preventDefault();
+            alert(`Thank you ${document.getElementById('fbName').value}! Feedback submitted successfully.`);
+            e.target.reset();
+        }
+    </script>
+</body>
+</html>
