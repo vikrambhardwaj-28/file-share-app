@@ -362,6 +362,16 @@
         let countdownInterval;
         let html5QrcodeScanner = null;
 
+        // Auto download on page load if QR was scanned
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const pinParam = urlParams.get('pin');
+            if (pinParam && pinParam.length === 6 && !isNaN(pinParam)) {
+                document.getElementById('pinInput').value = pinParam;
+                downloadFile();
+            }
+        };
+
         function handleFileSelect(event) {
             const files = Array.from(event.target.files);
             selectedFiles = [...selectedFiles, ...files];
@@ -430,7 +440,8 @@
             pinDisplay.innerText = pin;
 
             qrContainer.innerHTML = '';
-            const downloadUrl = `${window.location.origin}/download/${pin}`;
+            // Generate QR Code containing website auto-download parameter link
+            const downloadUrl = `${window.location.origin}/?pin=${pin}`;
             new QRCode(qrContainer, {
                 text: downloadUrl,
                 width: 130,
@@ -472,10 +483,15 @@
             html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: { width: 200, height: 200 } });
             
             html5QrcodeScanner.render((decodedText) => {
-                let pin = decodedText;
-                if (decodedText.includes('/download/')) {
+                let pin = '';
+                if (decodedText.includes('pin=')) {
+                    const urlParams = new URLSearchParams(decodedText.split('?')[1]);
+                    pin = urlParams.get('pin');
+                } else if (decodedText.includes('/download/')) {
                     const parts = decodedText.split('/download/');
                     pin = parts[parts.length - 1].trim();
+                } else {
+                    pin = decodedText.trim();
                 }
 
                 if (pin && pin.length === 6 && !isNaN(pin)) {
@@ -510,6 +526,7 @@
                     return;
                 }
 
+                // Download all files individually in original format
                 for (let i = 0; i < metaData.files.length; i++) {
                     const fileInfo = metaData.files[i];
                     const downloadUrl = `/download/${pin}/${fileInfo.index}`;
