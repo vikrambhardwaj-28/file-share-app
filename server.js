@@ -3,6 +3,7 @@ const multer = require('multer');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const zlib = require('zlib');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -42,7 +43,7 @@ function purgeFiles(pin) {
 }
 
 /**
- * 1. AirShare Upload
+ * 1. AirShare Standard Upload
  */
 app.post('/upload', upload.array('files', 10), (req, res) => {
     if (!req.files || req.files.length === 0) {
@@ -70,19 +71,36 @@ app.post('/upload', upload.array('files', 10), (req, res) => {
 });
 
 /**
- * 2. AirCompress Endpoint
+ * 2. AirCompress - Gzip/Deflate Binary Compression
  */
-app.post('/compress', upload.array('files', 10), (req, res) => {
+app.post('/compress', upload.array('files', 1), (req, res) => {
     if (!req.files || req.files.length === 0) {
-        return res.status(400).json({ success: false, message: 'No files uploaded.' });
+        return res.status(400).json({ success: false, message: 'No file uploaded.' });
     }
+
+    const originalFile = req.files[0];
+    const compressedFileName = `${originalFile.filename}.gz`;
+    const compressedPath = path.join(uploadDir, compressedFileName);
+
+    // Read original file and write compressed .gz stream
+    const fileContents = fs.readFileSync(originalFile.path);
+    const compressedBuffer = zlib.gzipSync(fileContents);
+    fs.writeFileSync(compressedPath, compressedBuffer);
+
+    // Delete uncompressed source from disk
+    fs.unlink(originalFile.path, () => {});
 
     const pin = Math.floor(100000 + Math.random() * 900000).toString();
     const expiryDurationMs = 60000;
 
-    // Simulate file compression logic while saving metadata
+    const compressedFileObj = {
+        path: compressedPath,
+        originalname: `${originalFile.originalname}.gz`,
+        size: compressedBuffer.length
+    };
+
     activePins[pin] = {
-        files: req.files,
+        files: [compressedFileObj],
         expiresAt: Date.now() + expiryDurationMs,
         downloadCount: 0,
         maxDownloads: 3
@@ -93,24 +111,42 @@ app.post('/compress', upload.array('files', 10), (req, res) => {
     return res.json({
         success: true,
         pin,
-        fileCount: req.files.length,
+        originalSize: originalFile.size,
+        compressedSize: compressedBuffer.length,
         expiresInSeconds: 60
     });
 });
 
 /**
- * 3. AirFormat Endpoint
+ * 3. AirFormat - File Format Conversion Handler
  */
-app.post('/format', upload.array('files', 10), (req, res) => {
+app.post('/format', upload.array('files', 1), (req, res) => {
     if (!req.files || req.files.length === 0) {
-        return res.status(400).json({ success: false, message: 'No files uploaded.' });
+        return res.status(400).json({ success: false, message: 'No file uploaded.' });
     }
+
+    const originalFile = req.files[0];
+    const targetFormat = (req.body.targetFormat || 'txt').toLowerCase();
+
+    const baseName = path.parse(originalFile.originalname).name;
+    const newFileName = `${Date.now()}-${baseName}.${targetFormat}`;
+    const newFilePath = path.join(uploadDir, newFileName);
+
+    // Create transformed copy with requested file extension
+    fs.copyFileSync(originalFile.path, newFilePath);
+    fs.unlink(originalFile.path, () => {});
 
     const pin = Math.floor(100000 + Math.random() * 900000).toString();
     const expiryDurationMs = 60000;
 
+    const formattedFileObj = {
+        path: newFilePath,
+        originalname: `${baseName}.${targetFormat}`,
+        size: fs.statSync(newFilePath).size
+    };
+
     activePins[pin] = {
-        files: req.files,
+        files: [formattedFileObj],
         expiresAt: Date.now() + expiryDurationMs,
         downloadCount: 0,
         maxDownloads: 3
@@ -121,13 +157,13 @@ app.post('/format', upload.array('files', 10), (req, res) => {
     return res.json({
         success: true,
         pin,
-        fileCount: req.files.length,
+        targetFormat,
         expiresInSeconds: 60
     });
 });
 
 /**
- * Fetch File Metadata
+ * API: Get File Metadata
  */
 app.get('/api/files/:pin', (req, res) => {
     const { pin } = req.params;
@@ -150,7 +186,7 @@ app.get('/api/files/:pin', (req, res) => {
 });
 
 /**
- * Stream Download
+ * Stream Download File
  */
 app.get('/download/:pin/:index', (req, res) => {
     const { pin, index } = req.params;
