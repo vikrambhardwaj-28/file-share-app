@@ -35,7 +35,7 @@ const activePins = {};
 /**
  * POST /upload
  * Accepts multiple files (up to 10) under the field 'files'.
- * Generates a 6-digit PIN valid for exactly 30 seconds.
+ * Generates a 6-digit PIN valid for exactly 60 seconds.
  */
 app.post('/upload', upload.array('files', 10), (req, res) => {
     if (!req.files || req.files.length === 0) {
@@ -44,7 +44,7 @@ app.post('/upload', upload.array('files', 10), (req, res) => {
 
     // Generate a 6-digit random security PIN
     const pin = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiryDurationMs = 30000; // 30 seconds
+    const expiryDurationMs = 60000; // 60 seconds
     const expiresAt = Date.now() + expiryDurationMs;
 
     // Save metadata in RAM
@@ -53,7 +53,7 @@ app.post('/upload', upload.array('files', 10), (req, res) => {
         expiresAt
     };
 
-    // Auto-purge files from disk and RAM after 30 seconds
+    // Auto-purge files from disk and RAM after 60 seconds
     setTimeout(() => {
         if (activePins[pin]) {
             activePins[pin].files.forEach(file => {
@@ -72,7 +72,7 @@ app.post('/upload', upload.array('files', 10), (req, res) => {
         success: true,
         pin,
         fileCount: req.files.length,
-        expiresInSeconds: 30
+        expiresInSeconds: 60
     });
 });
 
@@ -88,7 +88,7 @@ app.get('/download/:pin', (req, res) => {
     if (!record || Date.now() > record.expiresAt) {
         return res.status(410).json({
             success: false,
-            message: 'Invalid or expired PIN. Files are permanently deleted after 30 seconds.'
+            message: 'Invalid or expired PIN. Files are permanently deleted after 60 seconds.'
         });
     }
 
