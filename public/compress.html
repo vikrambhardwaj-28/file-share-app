@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AirCompress - Exact Size File Compression</title>
+    <title>AirCompress - Document & Image Compression</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -33,23 +33,10 @@
         .drop-zone { border: 2px dashed rgba(255, 255, 255, 0.2); border-radius: 14px; padding: 24px; text-align: center; cursor: pointer; background: rgba(255, 255, 255, 0.02); margin-bottom: 12px; }
         input[type="file"] { display: none; }
 
-        .target-box { background: rgba(0,0,0,0.25); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; margin-bottom: 15px; }
-        .target-box label { font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px; }
-        .target-inputs { display: flex; gap: 8px; }
-        .target-inputs input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px; color: white; outline: none; }
-        .target-inputs select { background: rgba(255,255,255,0.08); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px; color: white; outline: none; }
-
         .btn { width: 100%; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .result-box { display: none; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 14px; padding: 20px; text-align: center; margin-top: 15px; }
         .pin-code { font-size: 2rem; font-weight: 800; letter-spacing: 6px; color: var(--success); margin: 6px 0; }
         .timer-badge { font-size: 0.85rem; font-weight: 700; color: var(--danger); background: rgba(239, 68, 68, 0.15); padding: 6px 14px; border-radius: 20px; display: inline-block; }
-
-        .feedback-section { width: 100%; max-width: 900px; background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--card-border); border-radius: 20px; padding: 25px 30px; margin-bottom: 40px; }
-        .feedback-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
-        @media (max-width: 600px) { .feedback-form { grid-template-columns: 1fr; } }
-        .feedback-form input, .feedback-form textarea { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px; color: white; outline: none; }
-        .feedback-form textarea { grid-column: 1 / -1; resize: none; height: 80px; }
-        .feedback-form button { grid-column: 1 / -1; background: rgba(255,255,255,0.1); border: 1px solid var(--card-border); color: white; padding: 12px; border-radius: 10px; cursor: pointer; }
 
         footer { width: 100%; max-width: 900px; border-top: 1px solid var(--card-border); padding-top: 25px; display: flex; flex-direction: column; align-items: center; gap: 15px; text-align: center; }
         .social-links { display: flex; gap: 20px; }
@@ -71,8 +58,8 @@
 
     <div class="main-container">
         <div class="card">
-            <div class="card-title"><i class="fa-solid fa-file-zipper" style="color: var(--accent);"></i> Precision Target Compressor</div>
-            <p class="card-desc">Enter your exact target size limit in KB/MB.</p>
+            <div class="card-title"><i class="fa-solid fa-file-zipper" style="color: var(--accent);"></i> Document & Image Compressor</div>
+            <p class="card-desc">Compress PDFs, PPTs, Word, Excel & Image files up to 80% without quality loss.</p>
 
             <div class="drop-zone" onclick="document.getElementById('compFile').click()">
                 <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: var(--accent);"></i>
@@ -84,23 +71,12 @@
                 Original File Size: <strong id="origSizeValue">0 KB</strong>
             </div>
 
-            <div class="target-box">
-                <label>Set Target Compressed Size:</label>
-                <div class="target-inputs">
-                    <input type="number" id="targetNum" value="200" min="10">
-                    <select id="targetUnit">
-                        <option value="KB" selected>KB</option>
-                        <option value="MB">MB</option>
-                    </select>
-                </div>
-            </div>
-
-            <button class="btn" onclick="processTargetCompression()"><i class="fa-solid fa-bolt"></i> Compress File Now</button>
+            <button class="btn" onclick="startCloudCompressProcess()"><i class="fa-solid fa-bolt"></i> Compress File Now</button>
         </div>
 
         <div class="card">
-            <div class="card-title"><i class="fa-solid fa-square-check" style="color: var(--success);"></i> Compressed Output</div>
-            <p class="card-desc">Compressed output details and instant PIN/QR share.</p>
+            <div class="card-title"><i class="fa-solid fa-square-check" style="color: var(--success);"></i> Compressed Output Details</div>
+            <p class="card-desc">Compressed file details and instant download link.</p>
 
             <div id="resultBox" class="result-box">
                 <p style="font-size: 0.85rem; color: var(--text-muted);">BEFORE COMPRESS: <span id="resBeforeSize" style="color:white; font-weight:bold;">0 KB</span></p>
@@ -123,20 +99,9 @@
             </div>
 
             <div id="emptyPlaceholder" style="text-align: center; padding: 40px 10px; color: var(--text-muted); font-size: 0.85rem;">
-                Upload a file and set target size to see compressed result.
+                Upload a file and click "Compress File Now".
             </div>
         </div>
-    </div>
-
-    <div class="feedback-section">
-        <div class="card-title"><i class="fa-solid fa-comments" style="color: #c084fc;"></i> Send Us Your Feedback</div>
-        <p class="card-desc">Have suggestions or facing issues? Let us know below.</p>
-        <form class="feedback-form" onsubmit="alert('Feedback submitted!'); return false;">
-            <input type="text" placeholder="Your Name" required>
-            <input type="email" placeholder="Your Email" required>
-            <textarea placeholder="Type your message..." required></textarea>
-            <button type="submit"><i class="fa-solid fa-paper-plane"></i> Submit Feedback</button>
-        </form>
     </div>
 
     <footer>
@@ -168,57 +133,26 @@
             }
         }
 
-        function processTargetCompression() {
-            if (!selectedFile) return alert('Select a file first.');
+        function startCloudCompressProcess() {
+            if (!selectedFile) return alert('Please select a file to compress.');
 
-            const num = parseFloat(document.getElementById('targetNum').value);
-            const unit = document.getElementById('targetUnit').value;
-            const targetBytes = unit === 'MB' ? num * 1024 * 1024 : num * 1024;
-
-            if (selectedFile.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.readAsDataURL(selectedFile);
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.src = e.target.result;
-                    img.onload = function() {
-                        let scale = Math.min(1, Math.sqrt(targetBytes / selectedFile.size));
-                        let width = Math.max(100, Math.round(img.width * scale));
-                        let height = Math.max(100, Math.round(img.height * scale));
-
-                        const canvas = document.createElement('canvas');
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-
-                        canvas.toBlob(function(blob) {
-                            uploadResultBlob(blob, `${selectedFile.name.split('.')[0]}-compressed.jpg`);
-                        }, 'image/jpeg', 0.4);
-                    };
-                };
-            } else {
-                uploadResultBlob(selectedFile, selectedFile.name);
-            }
-        }
-
-        function uploadResultBlob(blob, filename) {
             const formData = new FormData();
-            formData.append('files', blob, filename);
+            formData.append('file', selectedFile);
 
-            fetch('/upload', { method: 'POST', body: formData })
-            .then(r => r.json())
+            fetch('/compress-cloud', { method: 'POST', body: formData })
+            .then(res => res.json())
             .then(data => {
                 if (data.success) {
                     document.getElementById('emptyPlaceholder').style.display = 'none';
                     document.getElementById('resultBox').style.display = 'block';
 
-                    document.getElementById('resBeforeSize').innerText = formatBytes(selectedFile.size);
-                    document.getElementById('resAfterSize').innerText = formatBytes(blob.size);
+                    document.getElementById('resBeforeSize').innerText = formatBytes(data.originalSize || selectedFile.size);
+                    document.getElementById('resAfterSize').innerText = formatBytes(data.compressedSize);
 
+                    const downloadUrl = `/download/${data.pin}/0`;
                     const dBtn = document.getElementById('directDownloadBtn');
-                    dBtn.href = URL.createObjectURL(blob);
-                    dBtn.download = filename;
+                    dBtn.href = downloadUrl;
+                    dBtn.download = selectedFile.name;
 
                     document.getElementById('pinDisplay').innerText = data.pin;
                     document.getElementById('qrcode').innerHTML = '';
@@ -231,8 +165,11 @@
                         if (timeLeft > 0) document.getElementById('timerDisplay').innerText = `Expiring in ${timeLeft}s`;
                         else { clearInterval(countdownInterval); document.getElementById('pinDisplay').innerText = '------'; document.getElementById('timerDisplay').innerText = '⚠️ PIN Expired!'; }
                     }, 1000);
+                } else {
+                    alert(data.message || 'Compression failed.');
                 }
-            });
+            })
+            .catch(err => alert('Server connection error.'));
         }
     </script>
 </body>
