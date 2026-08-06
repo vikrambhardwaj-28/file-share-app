@@ -3,11 +3,12 @@ const multer = require('multer');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const archiver = require('archiver');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Enable CORS and JSON body parsing
+// Middleware setup
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
@@ -28,58 +29,62 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// In-memory store for PIN metadata
+// In-memory object to store active PIN metadata
 const activePins = {};
 
 /**
  * POST /upload
- * Handles file upload, generates a 6-digit PIN, and schedules auto-deletion in 30 seconds.
+ * Accepts multiple files (up to 10) under the field 'files'.
+ * Generates a 6-digit PIN valid for exactly 30 seconds.
  */
-app.post('/upload', upload.single('file'), (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ success: false, message: 'No file uploaded.' });
+app.post('/upload', upload.array('files', 10), (req, res) => {
+    if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ success: false, message: 'No files uploaded.' });
     }
 
-    // Generate a secure 6-digit PIN (100000 - 999999)
+    // Generate a 6-digit random security PIN
     const pin = Math.floor(100000 + Math.random() * 900000).toString();
     const expiryDurationMs = 30000; // 30 seconds
     const expiresAt = Date.now() + expiryDurationMs;
 
-    // Save file metadata
+    // Save metadata in RAM
     activePins[pin] = {
-        filePath: req.file.path,
-        originalName: req.file.originalname,
+        files: req.files,
         expiresAt
     };
 
-    // Schedule auto-deletion from disk and memory after 30 seconds
+    // Auto-purge files from disk and RAM after 30 seconds
     setTimeout(() => {
         if (activePins[pin]) {
-            fs.unlink(activePins[pin].filePath, (err) => {
-                if (err && err.code !== 'ENOENT') {
-                    console.error(`[Error] Failed to delete file for PIN ${pin}:`, err);
-                }
+            activePins[pin].files.forEach(file => {
+                fs.unlink(file.path, (err) => {
+                    if (err && err.code !== 'ENOENT') {
+                        console.error(`[Error] Failed to delete file ${file.path}:`, err);
+                    }
+                });
             });
             delete activePins[pin];
-            console.log(`[Security Purge] PIN ${pin} and associated file expired.`);
+            console.log(`[Security Purge] PIN ${pin} and associated files deleted.`);
         }
     }, expiryDurationMs);
 
     return res.json({
         success: true,
         pin,
+        fileCount: req.files.length,
         expiresInSeconds: 30
     });
 });
 
 /**
  * GET /download/:pin
- * Validates 6-digit PIN and serves file download if unexpired.
+ * Validates PIN. Serves single file or archives multiple files into a ZIP stream.
  */
 app.get('/download/:pin', (req, res) => {
     const { pin } = req.params;
     const record = activePins[pin];
 
+    // Return 410 status if PIN is invalid or expired
     if (!record || Date.now() > record.expiresAt) {
         return res.status(410).json({
             success: false,
@@ -87,7 +92,27 @@ app.get('/download/:pin', (req, res) => {
         });
     }
 
-    return res.download(record.filePath, record.originalName);
+    // Single file download
+    if (record.files.length === 1) {
+        const singleFile = record.files[0];
+        return res.download(singleFile.path, singleFile.originalname);
+    }
+
+    // Multiple files zipped download
+    res.attachment('AirShare-Files.zip');
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    archive.on('error', (err) => {
+        res.status(500).send({ error: err.message });
+    });
+
+    archive.pipe(res);
+
+    record.files.forEach(file => {
+        archive.file(file.path, { name: file.originalname });
+    });
+
+    archive.finalize();
 });
 
 app.listen(PORT, () => {
