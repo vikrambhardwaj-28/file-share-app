@@ -274,7 +274,7 @@
             <div class="card-title">
                 <i class="fa-solid fa-paper-plane" style="color: var(--accent);"></i> Send Files
             </div>
-            <p class="card-desc">Upload files to generate a 30-second security PIN & QR Code.</p>
+            <p class="card-desc">Upload files to generate a 60-second security PIN & QR Code.</p>
 
             <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
                 <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: var(--accent);"></i>
@@ -296,13 +296,12 @@
                 <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">YOUR 6-DIGIT PIN</span>
                 <div id="pinDisplay" class="pin-code">------</div>
 
-                <!-- QR Code Display Container -->
                 <div class="qr-wrapper">
                     <div id="qrcode"></div>
                 </div>
                 
                 <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;">Scan QR Code to download directly</p>
-                <div id="timerDisplay" class="timer-badge">Expiring in 30s</div>
+                <div id="timerDisplay" class="timer-badge">Expiring in 60s</div>
             </div>
         </div>
 
@@ -321,12 +320,10 @@
                 <i class="fa-solid fa-circle-down"></i> Retrieve Files
             </button>
 
-            <!-- Scan QR Code Button -->
             <button class="btn" style="background: rgba(255,255,255,0.1); border: 1px solid var(--card-border); margin-top: 10px;" onclick="toggleQrScanner()">
                 <i class="fa-solid fa-qrcode"></i> Scan QR Code
             </button>
 
-            <!-- Camera Scanner UI -->
             <div id="reader" class="scanner-container"></div>
 
             <div id="downloadError" class="error-banner"></div>
@@ -431,7 +428,6 @@
             pinBox.style.display = 'block';
             pinDisplay.innerText = pin;
 
-            // Generate QR Code containing download URL
             qrContainer.innerHTML = '';
             const downloadUrl = `${window.location.origin}/download/${pin}`;
             new QRCode(qrContainer, {
@@ -460,7 +456,6 @@
             }, 1000);
         }
 
-        // Camera QR Code Scanner Function
         function toggleQrScanner() {
             const readerDiv = document.getElementById('reader');
             
@@ -476,7 +471,6 @@
             html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: { width: 200, height: 200 } });
             
             html5QrcodeScanner.render((decodedText) => {
-                // Extract PIN if full URL is scanned
                 let pin = decodedText;
                 if (decodedText.includes('/download/')) {
                     const parts = decodedText.split('/download/');
@@ -491,11 +485,10 @@
                 } else {
                     alert('Invalid QR code scanned.');
                 }
-            }, (error) => {
-                // Ignore silent scan errors
-            });
+            }, () => {});
         }
 
+        // Direct Original File Format Downloads
         async function downloadFile() {
             const pin = document.getElementById('pinInput').value.trim();
             const errorBanner = document.getElementById('downloadError');
@@ -508,31 +501,33 @@
             }
 
             try {
-                const response = await fetch(`/download/${pin}`);
-                
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    errorBanner.innerText = `⚠️ ${errorData.message || 'Invalid or Expired PIN.'}`;
+                // 1. Fetch file list metadata
+                const metaResponse = await fetch(`/api/files/${pin}`);
+                const metaData = await metaResponse.json();
+
+                if (!metaResponse.ok || !metaData.success) {
+                    errorBanner.innerText = `⚠️ ${metaData.message || 'Invalid or Expired PIN.'}`;
                     errorBanner.style.display = 'block';
                     return;
                 }
 
-                const blob = await response.blob();
-                const downloadUrl = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = downloadUrl;
-                
-                const disposition = response.headers.get('content-disposition');
-                let filename = 'AirShare-Download';
-                if (disposition && disposition.includes('filename=')) {
-                    filename = disposition.split('filename=')[1].replace(/"/g, '');
-                }
+                // 2. Download each file individually in original format
+                for (let i = 0; i < metaData.files.length; i++) {
+                    const fileInfo = metaData.files[i];
+                    const downloadUrl = `/download/${pin}/${fileInfo.index}`;
+                    
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = fileInfo.originalname;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
 
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                window.URL.revokeObjectURL(downloadUrl);
+                    // Short delay to avoid browser blocking multiple simultaneous downloads
+                    if (i < metaData.files.length - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 300));
+                    }
+                }
 
             } catch (err) {
                 errorBanner.innerText = '⚠️ Connection error or file not found.';
