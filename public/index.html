@@ -488,7 +488,6 @@
             }, () => {});
         }
 
-        // Direct Original File Format Downloads
         async function downloadFile() {
             const pin = document.getElementById('pinInput').value.trim();
             const errorBanner = document.getElementById('downloadError');
@@ -501,7 +500,6 @@
             }
 
             try {
-                // 1. Fetch file list metadata
                 const metaResponse = await fetch(`/api/files/${pin}`);
                 const metaData = await metaResponse.json();
 
@@ -511,7 +509,6 @@
                     return;
                 }
 
-                // 2. Download each file individually in original format
                 for (let i = 0; i < metaData.files.length; i++) {
                     const fileInfo = metaData.files[i];
                     const downloadUrl = `/download/${pin}/${fileInfo.index}`;
@@ -523,7 +520,6 @@
                     a.click();
                     a.remove();
 
-                    // Short delay to avoid browser blocking multiple simultaneous downloads
                     if (i < metaData.files.length - 1) {
                         await new Promise(resolve => setTimeout(resolve, 300));
                     }
