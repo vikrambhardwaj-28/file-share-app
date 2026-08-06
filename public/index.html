@@ -22,8 +22,8 @@
             --primary-hover: #4338ca;
             --accent: #06b6d4;
             --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
-            --card-bg: rgba(255, 255, 255, 0.05);
-            --card-border: rgba(255, 255, 255, 0.1);
+            --card-bg: rgba(15, 23, 42, 0.65);
+            --card-border: rgba(255, 255, 255, 0.12);
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
             --danger: #ef4444;
@@ -76,11 +76,19 @@
 
         .card {
             background: var(--card-bg);
-            backdrop-filter: blur(16px);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--card-border);
             border-radius: 20px;
             padding: 30px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(99, 102, 241, 0.4);
+            box-shadow: 0 25px 60px rgba(79, 70, 229, 0.25);
         }
 
         .card-title {
@@ -102,6 +110,7 @@
             cursor: pointer;
             background: rgba(255, 255, 255, 0.02);
             margin-bottom: 12px;
+            transition: all 0.3s ease;
         }
 
         .drop-zone:hover { border-color: var(--primary); background: rgba(79, 70, 229, 0.08); }
@@ -162,6 +171,30 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover { opacity: 0.95; transform: scale(0.99); }
+
+        .progress-wrapper {
+            display: none;
+            margin-bottom: 16px;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .progress-bar-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--primary));
+            transition: width 0.2s ease;
         }
 
         .pin-input-group input {
@@ -189,7 +222,48 @@
         }
 
         .pin-code { font-size: 2.2rem; font-weight: 800; letter-spacing: 8px; color: var(--success); margin: 8px 0; }
-        .timer-badge { font-size: 0.85rem; font-weight: 700; color: var(--danger); background: rgba(239, 68, 68, 0.15); padding: 4px 12px; border-radius: 20px; display: inline-block; }
+        
+        /* Animated Pulse Ring Timer Badge */
+        .timer-badge {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--danger);
+            background: rgba(239, 68, 68, 0.15);
+            padding: 6px 14px;
+            border-radius: 20px;
+            display: inline-block;
+            position: relative;
+            animation: pulseRing 1.5s infinite;
+        }
+
+        @keyframes pulseRing {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .quick-action-btns {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 12px;
+        }
+
+        .action-chip {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s;
+        }
+
+        .action-chip:hover { background: rgba(255, 255, 255, 0.18); }
 
         .qr-wrapper {
             background: #ffffff;
@@ -252,7 +326,7 @@
             width: 100%;
             max-width: 900px;
             background: var(--card-bg);
-            backdrop-filter: blur(16px);
+            backdrop-filter: blur(20px);
             border: 1px solid var(--card-border);
             border-radius: 20px;
             padding: 25px 30px;
@@ -295,7 +369,7 @@
         <div class="brand">
             <i class="fa-solid fa-bolt" style="color: var(--accent);"></i> AirShare
         </div>
-        <span style="font-size: 0.85rem; color: var(--text-muted);"><i class="fa-solid fa-lock"></i> End-to-End Secure</span>
+        <span style="font-size: 0.85rem; color: var(--text-muted);"><i class="fa-solid fa-shield-halved"></i> Encrypted Transfer</span>
     </nav>
 
     <div class="main-container">
@@ -318,6 +392,17 @@
                 <i class="fa-solid fa-plus"></i> Add More Files
             </button>
 
+            <!-- Dynamic Progress Bar -->
+            <div id="progressWrapper" class="progress-wrapper">
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                    <span>Uploading...</span>
+                    <span id="uploadPercent">0%</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div id="progressBarFill" class="progress-bar-fill"></div>
+                </div>
+            </div>
+
             <button class="btn" onclick="uploadFiles()">
                 <i class="fa-solid fa-key"></i> Generate Security PIN & QR
             </button>
@@ -325,6 +410,11 @@
             <div id="pinBox" class="pin-display-box">
                 <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">YOUR 6-DIGIT PIN</span>
                 <div id="pinDisplay" class="pin-code">------</div>
+
+                <div class="quick-action-btns">
+                    <button class="action-chip" onclick="copyPin()"><i class="fa-regular fa-copy"></i> Copy PIN</button>
+                    <button class="action-chip" onclick="shareLink()"><i class="fa-solid fa-share-nodes"></i> Share Link</button>
+                </div>
 
                 <div class="qr-wrapper">
                     <div id="qrcode"></div>
@@ -358,7 +448,6 @@
 
             <div id="downloadError" class="error-banner"></div>
 
-            <!-- List of Retrieved Files -->
             <div id="retrievedFilesBox" class="retrieved-files-box">
                 <p style="font-size: 0.85rem; font-weight: 700; color: var(--success);"><i class="fa-solid fa-circle-check"></i> Files Found (<span id="retrievedCount">0</span>):</p>
                 <div id="retrievedItemsList"></div>
@@ -396,8 +485,30 @@
         let selectedFiles = [];
         let countdownInterval;
         let html5QrcodeScanner = null;
+        let currentGeneratedPin = '';
 
-        // Auto download on page load if QR was scanned
+        // Web Audio API Sound Effects Generator
+        function playSound(type) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                if (type === 'success') {
+                    osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
+                    gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.25);
+                } else if (type === 'expire') {
+                    osc.frequency.setValueAtTime(220, ctx.currentTime); // A3
+                    gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.3);
+                }
+                osc.start();
+                osc.stop(ctx.currentTime + 0.3);
+            } catch (e) {}
+        }
+
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
             const pinParam = urlParams.get('pin');
@@ -440,7 +551,8 @@
             renderFileList();
         }
 
-        async function uploadFiles() {
+        // Upload with Progress Bar
+        function uploadFiles() {
             if (selectedFiles.length === 0) {
                 alert('Please select at least one file to upload.');
                 return;
@@ -449,23 +561,49 @@
             const formData = new FormData();
             selectedFiles.forEach(file => formData.append('files', file));
 
-            try {
-                const response = await fetch('/upload', { method: 'POST', body: formData });
-                const data = await response.json();
+            const progressWrapper = document.getElementById('progressWrapper');
+            const progressBarFill = document.getElementById('progressBarFill');
+            const uploadPercent = document.getElementById('uploadPercent');
 
-                if (data.success) {
-                    startCountdown(data.pin, data.expiresInSeconds);
-                    selectedFiles = [];
-                    renderFileList();
-                } else {
-                    alert(data.message || 'Upload failed.');
+            progressWrapper.style.display = 'block';
+            progressBarFill.style.width = '0%';
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/upload', true);
+
+            xhr.upload.onprogress = function(e) {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    progressBarFill.style.width = percent + '%';
+                    uploadPercent.innerText = percent + '%';
                 }
-            } catch (err) {
+            };
+
+            xhr.onload = function() {
+                progressWrapper.style.display = 'none';
+                if (xhr.status === 200) {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.success) {
+                        playSound('success');
+                        startCountdown(data.pin, data.expiresInSeconds);
+                        selectedFiles = [];
+                        renderFileList();
+                    }
+                } else {
+                    alert('Upload failed.');
+                }
+            };
+
+            xhr.onerror = function() {
+                progressWrapper.style.display = 'none';
                 alert('Connection error while uploading.');
-            }
+            };
+
+            xhr.send(formData);
         }
 
         function startCountdown(pin, durationSeconds) {
+            currentGeneratedPin = pin;
             const pinBox = document.getElementById('pinBox');
             const pinDisplay = document.getElementById('pinDisplay');
             const timerDisplay = document.getElementById('timerDisplay');
@@ -495,6 +633,7 @@
                     timerDisplay.innerText = `Expiring in ${timeLeft}s`;
                 } else {
                     clearInterval(countdownInterval);
+                    playSound('expire');
                     pinDisplay.innerText = '------';
                     qrContainer.innerHTML = '<div style="color: red; font-size: 0.8rem;">Expired</div>';
                     timerDisplay.innerText = '⚠️ PIN Expired! File Deleted.';
@@ -502,13 +641,25 @@
             }, 1000);
         }
 
+        function copyPin() {
+            if (currentGeneratedPin) {
+                navigator.clipboard.writeText(currentGeneratedPin);
+                alert('PIN Copied to Clipboard!');
+            }
+        }
+
+        function shareLink() {
+            if (currentGeneratedPin) {
+                const link = `${window.location.origin}/?pin=${currentGeneratedPin}`;
+                navigator.clipboard.writeText(link);
+                alert('Shareable Download Link Copied!');
+            }
+        }
+
         function toggleQrScanner() {
             const readerDiv = document.getElementById('reader');
-            
             if (readerDiv.style.display === 'block') {
-                if (html5QrcodeScanner) {
-                    html5QrcodeScanner.clear();
-                }
+                if (html5QrcodeScanner) html5QrcodeScanner.clear();
                 readerDiv.style.display = 'none';
                 return;
             }
@@ -566,7 +717,7 @@
                     return;
                 }
 
-                // Display file list on screen
+                playSound('success');
                 retrievedCount.innerText = metaData.files.length;
                 retrievedBox.style.display = 'block';
 
@@ -583,7 +734,6 @@
                     retrievedList.appendChild(item);
                 });
 
-                // Auto-trigger download for all files
                 for (let i = 0; i < metaData.files.length; i++) {
                     const fileInfo = metaData.files[i];
                     const downloadUrl = `/download/${pin}/${fileInfo.index}`;
