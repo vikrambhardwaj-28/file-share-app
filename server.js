@@ -11,13 +11,11 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// Upload directory setup
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Multer storage
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, uploadDir),
     filename: (req, file, cb) => {
@@ -29,9 +27,6 @@ const upload = multer({ storage });
 
 const activePins = {};
 
-/**
- * Helper to purge active files safely
- */
 function purgeFiles(pin) {
     if (activePins[pin]) {
         activePins[pin].files.forEach(file => {
@@ -42,13 +37,12 @@ function purgeFiles(pin) {
             });
         });
         delete activePins[pin];
-        console.log(`[Security Purge] PIN ${pin} expired and deleted.`);
+        console.log(`[Purge] PIN ${pin} expired and purged.`);
     }
 }
 
 /**
- * POST /upload
- * Accepts multiple files (up to 10), sets 60s timer & max download limit (3 claims)
+ * 1. AirShare Upload
  */
 app.post('/upload', upload.array('files', 10), (req, res) => {
     if (!req.files || req.files.length === 0) {
@@ -56,20 +50,16 @@ app.post('/upload', upload.array('files', 10), (req, res) => {
     }
 
     const pin = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiryDurationMs = 60000; // 60 seconds
-    const expiresAt = Date.now() + expiryDurationMs;
+    const expiryDurationMs = 60000;
 
     activePins[pin] = {
         files: req.files,
-        expiresAt,
+        expiresAt: Date.now() + expiryDurationMs,
         downloadCount: 0,
-        maxDownloads: 3 // Max 3 retrieval sessions allowed before auto-purge
+        maxDownloads: 3
     };
 
-    // Auto-delete after 60 seconds
-    setTimeout(() => {
-        purgeFiles(pin);
-    }, expiryDurationMs);
+    setTimeout(() => purgeFiles(pin), expiryDurationMs);
 
     return res.json({
         success: true,
@@ -80,8 +70,64 @@ app.post('/upload', upload.array('files', 10), (req, res) => {
 });
 
 /**
- * GET /api/files/:pin
- * Validates PIN & returns metadata list
+ * 2. AirCompress Endpoint
+ */
+app.post('/compress', upload.array('files', 10), (req, res) => {
+    if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ success: false, message: 'No files uploaded.' });
+    }
+
+    const pin = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiryDurationMs = 60000;
+
+    // Simulate file compression logic while saving metadata
+    activePins[pin] = {
+        files: req.files,
+        expiresAt: Date.now() + expiryDurationMs,
+        downloadCount: 0,
+        maxDownloads: 3
+    };
+
+    setTimeout(() => purgeFiles(pin), expiryDurationMs);
+
+    return res.json({
+        success: true,
+        pin,
+        fileCount: req.files.length,
+        expiresInSeconds: 60
+    });
+});
+
+/**
+ * 3. AirFormat Endpoint
+ */
+app.post('/format', upload.array('files', 10), (req, res) => {
+    if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ success: false, message: 'No files uploaded.' });
+    }
+
+    const pin = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiryDurationMs = 60000;
+
+    activePins[pin] = {
+        files: req.files,
+        expiresAt: Date.now() + expiryDurationMs,
+        downloadCount: 0,
+        maxDownloads: 3
+    };
+
+    setTimeout(() => purgeFiles(pin), expiryDurationMs);
+
+    return res.json({
+        success: true,
+        pin,
+        fileCount: req.files.length,
+        expiresInSeconds: 60
+    });
+});
+
+/**
+ * Fetch File Metadata
  */
 app.get('/api/files/:pin', (req, res) => {
     const { pin } = req.params;
@@ -90,21 +136,21 @@ app.get('/api/files/:pin', (req, res) => {
     if (!record || Date.now() > record.expiresAt) {
         return res.status(410).json({
             success: false,
-            message: 'Invalid or expired PIN. Files are permanently deleted after 60 seconds.'
+            message: 'Invalid or expired PIN. Files deleted after 60 seconds.'
         });
     }
 
     const fileList = record.files.map((file, index) => ({
         index,
-        originalname: file.originalname
+        originalname: file.originalname,
+        size: file.size
     }));
 
     return res.json({ success: true, files: fileList });
 });
 
 /**
- * GET /download/:pin/:index
- * Streams single requested file
+ * Stream Download
  */
 app.get('/download/:pin/:index', (req, res) => {
     const { pin, index } = req.params;
@@ -121,11 +167,10 @@ app.get('/download/:pin/:index', (req, res) => {
         return res.status(404).json({ success: false, message: 'File not found.' });
     }
 
-    // Increment download claim counter on last file index download
     if (fileIdx === record.files.length - 1) {
         record.downloadCount += 1;
         if (record.downloadCount >= record.maxDownloads) {
-            setTimeout(() => purgeFiles(pin), 1000); // Purge after max download limit
+            setTimeout(() => purgeFiles(pin), 1000);
         }
     }
 

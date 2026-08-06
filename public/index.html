@@ -4,15 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AirShare - Secure File Transfer</title>
-
-    <!-- Custom Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
-
-    <!-- Google Fonts & FontAwesome Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <!-- QR Code Generator & Reader Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
 
@@ -33,351 +27,96 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
 
         body {
-            background: var(--bg-gradient);
-            color: var(--text-main);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            padding: 20px 15px;
+            background: var(--bg-gradient); color: var(--text-main);
+            min-height: 100vh; display: flex; flex-direction: column;
+            align-items: center; justify-content: space-between; padding: 20px 15px;
         }
 
-        .navbar {
-            width: 100%;
-            max-width: 900px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 0;
-            margin-bottom: 20px;
+        .navbar { width: 100%; max-width: 900px; display: flex; justify-content: space-between; align-items: center; padding: 15px 0; margin-bottom: 10px; }
+        .brand { font-size: 1.5rem; font-weight: 800; background: linear-gradient(to right, #818cf8, #c084fc); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        .wide-nav-bar {
+            width: 100%; max-width: 900px; background: var(--card-bg);
+            backdrop-filter: blur(20px); border: 1px solid var(--card-border);
+            border-radius: 16px; padding: 8px; display: flex; gap: 10px; margin-bottom: 24px;
         }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1.5rem;
-            font-weight: 800;
-            background: linear-gradient(to right, #818cf8, #c084fc);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        .nav-tab {
+            flex: 1; text-align: center; padding: 12px 16px; border-radius: 12px;
+            color: var(--text-muted); text-decoration: none; font-weight: 600; font-size: 0.95rem;
+            display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease;
         }
 
-        .main-container {
-            width: 100%;
-            max-width: 900px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 24px;
-            margin-bottom: 40px;
-        }
+        .nav-tab:hover:not(.active) { background: rgba(255, 255, 255, 0.08); color: var(--text-main); }
+        .nav-tab.active { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; box-shadow: 0 4px 15px rgba(79, 70, 229, 0.35); }
 
-        .card {
-            background: var(--card-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--card-border);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .card:hover {
-            transform: translateY(-6px);
-            border-color: rgba(99, 102, 241, 0.4);
-            box-shadow: 0 25px 60px rgba(79, 70, 229, 0.25);
-        }
-
-        .card-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
+        .main-container { width: 100%; max-width: 900px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 40px; }
+        .card { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--card-border); border-radius: 20px; padding: 30px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); }
+        .card-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
         .card-desc { font-size: 0.875rem; color: var(--text-muted); margin-bottom: 20px; }
 
-        .drop-zone {
-            border: 2px dashed rgba(255, 255, 255, 0.2);
-            border-radius: 14px;
-            padding: 24px;
-            text-align: center;
-            cursor: pointer;
-            background: rgba(255, 255, 255, 0.02);
-            margin-bottom: 12px;
-            transition: all 0.3s ease;
-        }
-
+        .drop-zone { border: 2px dashed rgba(255, 255, 255, 0.2); border-radius: 14px; padding: 24px; text-align: center; cursor: pointer; background: rgba(255, 255, 255, 0.02); margin-bottom: 12px; }
         .drop-zone:hover { border-color: var(--primary); background: rgba(79, 70, 229, 0.08); }
 
-        .file-list {
-            margin-bottom: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            max-height: 150px;
-            overflow-y: auto;
-        }
+        .file-list { margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto; }
+        .file-item { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border); border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
 
-        .file-item {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            padding: 8px 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.85rem;
-        }
-
-        .file-item i.remove-btn { color: var(--danger); cursor: pointer; }
-
-        .add-more-btn {
-            background: transparent;
-            border: 1px dashed var(--accent);
-            color: var(--accent);
-            padding: 8px;
-            border-radius: 8px;
-            width: 100%;
-            cursor: pointer;
-            font-weight: 600;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
-
-        .add-more-btn:hover { background: rgba(6, 182, 212, 0.1); }
-
+        .add-more-btn { background: transparent; border: 1px dashed var(--accent); color: var(--accent); padding: 8px; border-radius: 8px; width: 100%; cursor: pointer; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; justify-content: center; gap: 6px; }
         input[type="file"] { display: none; }
 
-        .btn {
-            width: 100%;
-            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
-            color: white;
-            border: none;
-            padding: 14px;
-            border-radius: 12px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-        }
-
+        .btn { width: 100%; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn:hover { opacity: 0.95; transform: scale(0.99); }
 
-        .progress-wrapper {
-            display: none;
-            margin-bottom: 16px;
-        }
+        .progress-wrapper { display: none; margin-bottom: 16px; }
+        .progress-bar-bg { width: 100%; height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 10px; overflow: hidden; margin-top: 6px; }
+        .progress-bar-fill { width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--primary)); transition: width 0.2s ease; }
 
-        .progress-bar-bg {
-            width: 100%;
-            height: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            overflow: hidden;
-            margin-top: 6px;
-        }
-
-        .progress-bar-fill {
-            width: 0%;
-            height: 100%;
-            background: linear-gradient(90deg, var(--accent), var(--primary));
-            transition: width 0.2s ease;
-        }
-
-        .pin-input-group input {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 16px;
-            color: var(--text-main);
-            font-size: 1.2rem;
-            letter-spacing: 4px;
-            text-align: center;
-            outline: none;
-            margin-bottom: 16px;
-        }
-
-        .pin-display-box {
-            display: none;
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            border-radius: 14px;
-            padding: 20px;
-            text-align: center;
-            margin-top: 16px;
-        }
-
+        .pin-input-group input { width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--card-border); border-radius: 12px; padding: 16px; color: var(--text-main); font-size: 1.2rem; letter-spacing: 4px; text-align: center; outline: none; margin-bottom: 16px; }
+        .pin-display-box { display: none; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 14px; padding: 20px; text-align: center; margin-top: 16px; }
         .pin-code { font-size: 2.2rem; font-weight: 800; letter-spacing: 8px; color: var(--success); margin: 8px 0; }
-        
-        /* Animated Pulse Ring Timer Badge */
-        .timer-badge {
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: var(--danger);
-            background: rgba(239, 68, 68, 0.15);
-            padding: 6px 14px;
-            border-radius: 20px;
-            display: inline-block;
-            position: relative;
-            animation: pulseRing 1.5s infinite;
-        }
 
-        @keyframes pulseRing {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-        }
+        .timer-badge { font-size: 0.85rem; font-weight: 700; color: var(--danger); background: rgba(239, 68, 68, 0.15); padding: 6px 14px; border-radius: 20px; display: inline-block; animation: pulseRing 1.5s infinite; }
+        @keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-        .quick-action-btns {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 12px;
-        }
+        .quick-action-btns { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
+        .action-chip { background: rgba(255, 255, 255, 0.08); border: 1px solid var(--card-border); color: var(--text-main); padding: 6px 12px; border-radius: 8px; font-size: 0.78rem; cursor: pointer; display: flex; align-items: center; gap: 6px; }
 
-        .action-chip {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid var(--card-border);
-            color: var(--text-main);
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 0.78rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: background 0.2s;
-        }
+        .qr-wrapper { background: #ffffff; padding: 12px; border-radius: 12px; display: inline-block; margin: 12px 0; }
+        .scanner-container { display: none; margin-top: 16px; border-radius: 12px; overflow: hidden; border: 1px solid var(--card-border); }
+        .error-banner { display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger); color: #fca5a5; padding: 12px; border-radius: 10px; font-size: 0.85rem; margin-top: 12px; text-align: center; }
 
-        .action-chip:hover { background: rgba(255, 255, 255, 0.18); }
+        .retrieved-files-box { display: none; margin-top: 16px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--card-border); border-radius: 12px; padding: 15px; }
+        .retrieved-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(0, 0, 0, 0.2); border-radius: 8px; margin-top: 8px; font-size: 0.85rem; }
+        .retrieved-item a { color: var(--accent); text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 4px; }
 
-        .qr-wrapper {
-            background: #ffffff;
-            padding: 12px;
-            border-radius: 12px;
-            display: inline-block;
-            margin: 12px 0;
-        }
-
-        .scanner-container {
-            display: none;
-            margin-top: 16px;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid var(--card-border);
-        }
-
-        .error-banner {
-            display: none;
-            background: rgba(239, 68, 68, 0.15);
-            border: 1px solid var(--danger);
-            color: #fca5a5;
-            padding: 12px;
-            border-radius: 10px;
-            font-size: 0.85rem;
-            margin-top: 12px;
-            text-align: center;
-        }
-
-        .retrieved-files-box {
-            display: none;
-            margin-top: 16px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 15px;
-        }
-
-        .retrieved-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 8px;
-            margin-top: 8px;
-            font-size: 0.85rem;
-        }
-
-        .retrieved-item a {
-            color: var(--accent);
-            text-decoration: none;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .feedback-section {
-            width: 100%;
-            max-width: 900px;
-            background: var(--card-bg);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--card-border);
-            border-radius: 20px;
-            padding: 25px 30px;
-            margin-bottom: 40px;
-        }
-
+        .feedback-section { width: 100%; max-width: 900px; background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--card-border); border-radius: 20px; padding: 25px 30px; margin-bottom: 40px; }
         .feedback-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
         @media (max-width: 600px) { .feedback-form { grid-template-columns: 1fr; } }
         .feedback-form input, .feedback-form textarea { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px; color: white; outline: none; }
         .feedback-form textarea { grid-column: 1 / -1; resize: none; height: 80px; }
-        .feedback-form button { grid-column: 1 / -1; }
+        .feedback-form button { grid-column: 1 / -1; background: rgba(255,255,255,0.1); border: 1px solid var(--card-border); color: white; padding: 12px; border-radius: 10px; cursor: pointer; }
 
-        footer {
-            width: 100%;
-            max-width: 900px;
-            border-top: 1px solid var(--card-border);
-            padding-top: 25px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            text-align: center;
-        }
-
+        footer { width: 100%; max-width: 900px; border-top: 1px solid var(--card-border); padding-top: 25px; display: flex; flex-direction: column; align-items: center; gap: 15px; text-align: center; }
         .social-links { display: flex; gap: 20px; }
-        .social-icon {
-            width: 44px; height: 44px; border-radius: 50%;
-            background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border);
-            display: flex; align-items: center; justify-content: center;
-            color: var(--text-main); font-size: 1.2rem; text-decoration: none;
-        }
-        .social-icon.insta:hover { background: #e1306c; }
-        .social-icon.fb:hover { background: #1877f2; }
-        .social-icon.mail:hover { background: #ea4335; }
+        .social-icon { width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border); display: flex; align-items: center; justify-content: center; color: var(--text-main); font-size: 1.2rem; text-decoration: none; }
     </style>
 </head>
 <body>
 
     <nav class="navbar">
-        <div class="brand">
-            <i class="fa-solid fa-bolt" style="color: var(--accent);"></i> AirShare
-        </div>
+        <div class="brand"><i class="fa-solid fa-bolt" style="color: var(--accent);"></i> AirShare</div>
         <span style="font-size: 0.85rem; color: var(--text-muted);"><i class="fa-solid fa-shield-halved"></i> Encrypted Transfer</span>
     </nav>
 
+    <div class="wide-nav-bar">
+        <a href="index.html" class="nav-tab active"><i class="fa-solid fa-share-nodes"></i> AirShare</a>
+        <a href="compress.html" class="nav-tab"><i class="fa-solid fa-file-zipper"></i> AirCompress</a>
+        <a href="format.html" class="nav-tab"><i class="fa-solid fa-file-code"></i> AirFormat</a>
+    </div>
+
     <div class="main-container">
-        <!-- Send File Card -->
         <div class="card">
-            <div class="card-title">
-                <i class="fa-solid fa-paper-plane" style="color: var(--accent);"></i> Send Files
-            </div>
+            <div class="card-title"><i class="fa-solid fa-paper-plane" style="color: var(--accent);"></i> Send Files</div>
             <p class="card-desc">Upload files to generate a 60-second security PIN & QR Code.</p>
 
             <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
@@ -387,65 +126,39 @@
             <input type="file" id="fileInput" multiple onchange="handleFileSelect(event)">
 
             <div id="fileList" class="file-list"></div>
+            <button id="addMoreBtn" class="add-more-btn" style="display: none;" onclick="document.getElementById('fileInput').click()"><i class="fa-solid fa-plus"></i> Add More Files</button>
 
-            <button id="addMoreBtn" class="add-more-btn" style="display: none;" onclick="document.getElementById('fileInput').click()">
-                <i class="fa-solid fa-plus"></i> Add More Files
-            </button>
-
-            <!-- Dynamic Progress Bar -->
             <div id="progressWrapper" class="progress-wrapper">
                 <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
-                    <span>Uploading...</span>
-                    <span id="uploadPercent">0%</span>
+                    <span>Uploading...</span><span id="uploadPercent">0%</span>
                 </div>
-                <div class="progress-bar-bg">
-                    <div id="progressBarFill" class="progress-bar-fill"></div>
-                </div>
+                <div class="progress-bar-bg"><div id="progressBarFill" class="progress-bar-fill"></div></div>
             </div>
 
-            <button class="btn" onclick="uploadFiles()">
-                <i class="fa-solid fa-key"></i> Generate Security PIN & QR
-            </button>
+            <button class="btn" onclick="uploadFiles()"><i class="fa-solid fa-key"></i> Generate Security PIN & QR</button>
 
             <div id="pinBox" class="pin-display-box">
                 <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">YOUR 6-DIGIT PIN</span>
                 <div id="pinDisplay" class="pin-code">------</div>
-
                 <div class="quick-action-btns">
                     <button class="action-chip" onclick="copyPin()"><i class="fa-regular fa-copy"></i> Copy PIN</button>
                     <button class="action-chip" onclick="shareLink()"><i class="fa-solid fa-share-nodes"></i> Share Link</button>
                 </div>
-
-                <div class="qr-wrapper">
-                    <div id="qrcode"></div>
-                </div>
-                
+                <div class="qr-wrapper"><div id="qrcode"></div></div>
                 <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;">Scan QR Code to download directly</p>
                 <div id="timerDisplay" class="timer-badge">Expiring in 60s</div>
             </div>
         </div>
 
-        <!-- Receive File Card -->
         <div class="card">
-            <div class="card-title">
-                <i class="fa-solid fa-download" style="color: var(--primary);"></i> Download Files
-            </div>
+            <div class="card-title"><i class="fa-solid fa-download" style="color: var(--primary);"></i> Download Files</div>
             <p class="card-desc">Enter 6-digit PIN or scan QR Code to download.</p>
+            <div class="pin-input-group"><input type="text" id="pinInput" placeholder="ENTER 6-DIGIT PIN" maxlength="6" autocomplete="off"></div>
 
-            <div class="pin-input-group">
-                <input type="text" id="pinInput" placeholder="ENTER 6-DIGIT PIN" maxlength="6" autocomplete="off">
-            </div>
-
-            <button class="btn" style="background: linear-gradient(135deg, #06b6d4, #0284c7);" onclick="downloadFile()">
-                <i class="fa-solid fa-circle-down"></i> Retrieve Files
-            </button>
-
-            <button class="btn" style="background: rgba(255,255,255,0.1); border: 1px solid var(--card-border); margin-top: 10px;" onclick="toggleQrScanner()">
-                <i class="fa-solid fa-qrcode"></i> Scan QR Code
-            </button>
+            <button class="btn" style="background: linear-gradient(135deg, #06b6d4, #0284c7);" onclick="downloadFile()"><i class="fa-solid fa-circle-down"></i> Retrieve Files</button>
+            <button class="btn" style="background: rgba(255,255,255,0.1); border: 1px solid var(--card-border); margin-top: 10px;" onclick="toggleQrScanner()"><i class="fa-solid fa-qrcode"></i> Scan QR Code</button>
 
             <div id="reader" class="scanner-container"></div>
-
             <div id="downloadError" class="error-banner"></div>
 
             <div id="retrievedFilesBox" class="retrieved-files-box">
@@ -455,28 +168,22 @@
         </div>
     </div>
 
-    <!-- Feedback Section -->
     <div class="feedback-section">
-        <div class="card-title">
-            <i class="fa-solid fa-comments" style="color: #c084fc;"></i> Send Us Your Feedback
-        </div>
+        <div class="card-title"><i class="fa-solid fa-comments" style="color: #c084fc;"></i> Send Us Your Feedback</div>
         <p class="card-desc">Have suggestions or facing issues? Let us know below.</p>
-        <form class="feedback-form" onsubmit="submitFeedback(event)">
-            <input type="text" id="fbName" placeholder="Your Name" required>
-            <input type="email" id="fbEmail" placeholder="Your Email" required>
-            <textarea id="fbMessage" placeholder="Type your message..." required></textarea>
-            <button type="submit" class="btn" style="background: rgba(255,255,255,0.1); border: 1px solid var(--card-border);">
-                <i class="fa-solid fa-paper-plane"></i> Submit Feedback
-            </button>
+        <form class="feedback-form" onsubmit="alert('Feedback submitted!'); return false;">
+            <input type="text" placeholder="Your Name" required>
+            <input type="email" placeholder="Your Email" required>
+            <textarea placeholder="Type your message..." required></textarea>
+            <button type="submit"><i class="fa-solid fa-paper-plane"></i> Submit Feedback</button>
         </form>
     </div>
 
-    <!-- Footer -->
     <footer>
         <div class="social-links">
-            <a href="https://www.instagram.com/vikrm_bhardwaj?igsh=OWh4ZHprbW5rNTZv" target="_blank" class="social-icon insta"><i class="fa-brands fa-instagram"></i></a>
-            <a href="https://www.facebook.com/share/196jZuggxg/" target="_blank" class="social-icon fb"><i class="fa-brands fa-facebook-f"></i></a>
-            <a href="mailto:vikram.2872006@gmail.com" class="social-icon mail"><i class="fa-solid fa-envelope"></i></a>
+            <a href="https://www.instagram.com/vikrm_bhardwaj?igsh=OWh4ZHprbW5rNTZv" target="_blank" class="social-icon"><i class="fa-brands fa-instagram"></i></a>
+            <a href="https://www.facebook.com/share/196jZuggxg/" target="_blank" class="social-icon"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="mailto:vikram.2872006@gmail.com" class="social-icon"><i class="fa-solid fa-envelope"></i></a>
         </div>
         <p style="font-size: 0.85rem; color: var(--text-muted);">Designed & Developed by <strong>Vikram Bhardwaj</strong></p>
     </footer>
@@ -487,25 +194,21 @@
         let html5QrcodeScanner = null;
         let currentGeneratedPin = '';
 
-        // Web Audio API Sound Effects Generator
         function playSound(type) {
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-
+                osc.connect(gain); gain.connect(ctx.destination);
                 if (type === 'success') {
-                    osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
+                    osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
                     gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.25);
                 } else if (type === 'expire') {
-                    osc.frequency.setValueAtTime(220, ctx.currentTime); // A3
+                    osc.frequency.setValueAtTime(220, ctx.currentTime);
                     gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.3);
                 }
-                osc.start();
-                osc.stop(ctx.currentTime + 0.3);
+                osc.start(); osc.stop(ctx.currentTime + 0.3);
             } catch (e) {}
         }
 
@@ -519,45 +222,26 @@
         };
 
         function handleFileSelect(event) {
-            const files = Array.from(event.target.files);
-            selectedFiles = [...selectedFiles, ...files];
-            renderFileList();
-            event.target.value = ''; 
+            selectedFiles = [...selectedFiles, ...Array.from(event.target.files)];
+            renderFileList(); event.target.value = ''; 
         }
 
         function renderFileList() {
             const listContainer = document.getElementById('fileList');
             const addMoreBtn = document.getElementById('addMoreBtn');
             listContainer.innerHTML = '';
-
             if (selectedFiles.length > 0) {
                 addMoreBtn.style.display = 'flex';
                 selectedFiles.forEach((file, index) => {
-                    const item = document.createElement('div');
-                    item.className = 'file-item';
-                    item.innerHTML = `
-                        <span><i class="fa-regular fa-file"></i> ${file.name}</span>
-                        <i class="fa-solid fa-xmark remove-btn" onclick="removeFile(${index})"></i>
-                    `;
-                    listContainer.appendChild(item);
+                    listContainer.innerHTML += `<div class="file-item"><span><i class="fa-regular fa-file"></i> ${file.name}</span><i class="fa-solid fa-xmark" style="color:var(--danger);cursor:pointer;" onclick="removeFile(${index})"></i></div>`;
                 });
-            } else {
-                addMoreBtn.style.display = 'none';
-            }
+            } else { addMoreBtn.style.display = 'none'; }
         }
 
-        function removeFile(index) {
-            selectedFiles.splice(index, 1);
-            renderFileList();
-        }
+        function removeFile(index) { selectedFiles.splice(index, 1); renderFileList(); }
 
-        // Upload with Progress Bar
         function uploadFiles() {
-            if (selectedFiles.length === 0) {
-                alert('Please select at least one file to upload.');
-                return;
-            }
-
+            if (selectedFiles.length === 0) return alert('Select files first.');
             const formData = new FormData();
             selectedFiles.forEach(file => formData.append('files', file));
 
@@ -566,200 +250,70 @@
             const uploadPercent = document.getElementById('uploadPercent');
 
             progressWrapper.style.display = 'block';
-            progressBarFill.style.width = '0%';
-
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/upload', true);
-
-            xhr.upload.onprogress = function(e) {
+            xhr.upload.onprogress = (e) => {
                 if (e.lengthComputable) {
                     const percent = Math.round((e.loaded / e.total) * 100);
-                    progressBarFill.style.width = percent + '%';
-                    uploadPercent.innerText = percent + '%';
+                    progressBarFill.style.width = percent + '%'; uploadPercent.innerText = percent + '%';
                 }
             };
-
             xhr.onload = function() {
                 progressWrapper.style.display = 'none';
                 if (xhr.status === 200) {
                     const data = JSON.parse(xhr.responseText);
-                    if (data.success) {
-                        playSound('success');
-                        startCountdown(data.pin, data.expiresInSeconds);
-                        selectedFiles = [];
-                        renderFileList();
-                    }
-                } else {
-                    alert('Upload failed.');
+                    if (data.success) { playSound('success'); startCountdown(data.pin, data.expiresInSeconds); selectedFiles = []; renderFileList(); }
                 }
             };
-
-            xhr.onerror = function() {
-                progressWrapper.style.display = 'none';
-                alert('Connection error while uploading.');
-            };
-
             xhr.send(formData);
         }
 
         function startCountdown(pin, durationSeconds) {
             currentGeneratedPin = pin;
             const pinBox = document.getElementById('pinBox');
-            const pinDisplay = document.getElementById('pinDisplay');
-            const timerDisplay = document.getElementById('timerDisplay');
-            const qrContainer = document.getElementById('qrcode');
-
+            document.getElementById('pinDisplay').innerText = pin;
+            document.getElementById('qrcode').innerHTML = '';
+            new QRCode(document.getElementById('qrcode'), { text: `${window.location.origin}/index.html?pin=${pin}`, width: 130, height: 130 });
             pinBox.style.display = 'block';
-            pinDisplay.innerText = pin;
-
-            qrContainer.innerHTML = '';
-            const downloadUrl = `${window.location.origin}/?pin=${pin}`;
-            new QRCode(qrContainer, {
-                text: downloadUrl,
-                width: 130,
-                height: 130,
-                colorDark: "#0f172a",
-                colorLight: "#ffffff"
-            });
 
             let timeLeft = durationSeconds;
-            timerDisplay.innerText = `Expiring in ${timeLeft}s`;
-
             clearInterval(countdownInterval);
-
             countdownInterval = setInterval(() => {
                 timeLeft--;
-                if (timeLeft > 0) {
-                    timerDisplay.innerText = `Expiring in ${timeLeft}s`;
-                } else {
-                    clearInterval(countdownInterval);
-                    playSound('expire');
-                    pinDisplay.innerText = '------';
-                    qrContainer.innerHTML = '<div style="color: red; font-size: 0.8rem;">Expired</div>';
-                    timerDisplay.innerText = '⚠️ PIN Expired! File Deleted.';
-                }
+                if (timeLeft > 0) document.getElementById('timerDisplay').innerText = `Expiring in ${timeLeft}s`;
+                else { clearInterval(countdownInterval); playSound('expire'); document.getElementById('pinDisplay').innerText = '------'; document.getElementById('timerDisplay').innerText = '⚠️ PIN Expired!'; }
             }, 1000);
         }
 
-        function copyPin() {
-            if (currentGeneratedPin) {
-                navigator.clipboard.writeText(currentGeneratedPin);
-                alert('PIN Copied to Clipboard!');
-            }
-        }
-
-        function shareLink() {
-            if (currentGeneratedPin) {
-                const link = `${window.location.origin}/?pin=${currentGeneratedPin}`;
-                navigator.clipboard.writeText(link);
-                alert('Shareable Download Link Copied!');
-            }
-        }
+        function copyPin() { if (currentGeneratedPin) navigator.clipboard.writeText(currentGeneratedPin), alert('PIN Copied!'); }
+        function shareLink() { if (currentGeneratedPin) navigator.clipboard.writeText(`${window.location.origin}/index.html?pin=${currentGeneratedPin}`), alert('Link Copied!'); }
 
         function toggleQrScanner() {
             const readerDiv = document.getElementById('reader');
-            if (readerDiv.style.display === 'block') {
-                if (html5QrcodeScanner) html5QrcodeScanner.clear();
-                readerDiv.style.display = 'none';
-                return;
-            }
-
+            if (readerDiv.style.display === 'block') { if (html5QrcodeScanner) html5QrcodeScanner.clear(); readerDiv.style.display = 'none'; return; }
             readerDiv.style.display = 'block';
             html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: { width: 200, height: 200 } });
-            
-            html5QrcodeScanner.render((decodedText) => {
-                let pin = '';
-                if (decodedText.includes('pin=')) {
-                    const urlParams = new URLSearchParams(decodedText.split('?')[1]);
-                    pin = urlParams.get('pin');
-                } else if (decodedText.includes('/download/')) {
-                    const parts = decodedText.split('/download/');
-                    pin = parts[parts.length - 1].trim();
-                } else {
-                    pin = decodedText.trim();
-                }
-
-                if (pin && pin.length === 6 && !isNaN(pin)) {
-                    document.getElementById('pinInput').value = pin;
-                    html5QrcodeScanner.clear();
-                    readerDiv.style.display = 'none';
-                    downloadFile();
-                } else {
-                    alert('Invalid QR code scanned.');
-                }
-            }, () => {});
+            html5QrcodeScanner.render((text) => {
+                let pin = text.includes('pin=') ? new URLSearchParams(text.split('?')[1]).get('pin') : text.trim();
+                if (pin && pin.length === 6) { document.getElementById('pinInput').value = pin; html5QrcodeScanner.clear(); readerDiv.style.display = 'none'; downloadFile(); }
+            });
         }
 
         async function downloadFile() {
             const pin = document.getElementById('pinInput').value.trim();
-            const errorBanner = document.getElementById('downloadError');
-            const retrievedBox = document.getElementById('retrievedFilesBox');
-            const retrievedList = document.getElementById('retrievedItemsList');
-            const retrievedCount = document.getElementById('retrievedCount');
-
-            errorBanner.style.display = 'none';
-            retrievedBox.style.display = 'none';
-            retrievedList.innerHTML = '';
-
-            if (pin.length !== 6 || isNaN(pin)) {
-                errorBanner.innerText = '⚠️ Please enter a valid 6-digit PIN.';
-                errorBanner.style.display = 'block';
-                return;
-            }
-
+            if (pin.length !== 6) return alert('Enter valid 6-digit PIN');
             try {
                 const metaResponse = await fetch(`/api/files/${pin}`);
                 const metaData = await metaResponse.json();
-
-                if (!metaResponse.ok || !metaData.success) {
-                    errorBanner.innerText = `⚠️ ${metaData.message || 'Invalid or Expired PIN.'}`;
-                    errorBanner.style.display = 'block';
-                    return;
-                }
-
+                if (!metaData.success) return alert(metaData.message);
                 playSound('success');
-                retrievedCount.innerText = metaData.files.length;
-                retrievedBox.style.display = 'block';
-
-                metaData.files.forEach(fileInfo => {
-                    const fileUrl = `/download/${pin}/${fileInfo.index}`;
-                    const item = document.createElement('div');
-                    item.className = 'retrieved-item';
-                    item.innerHTML = `
-                        <span><i class="fa-regular fa-file"></i> ${fileInfo.originalname}</span>
-                        <a href="${fileUrl}" download="${fileInfo.originalname}">
-                            <i class="fa-solid fa-download"></i> Download
-                        </a>
-                    `;
-                    retrievedList.appendChild(item);
+                document.getElementById('retrievedCount').innerText = metaData.files.length;
+                document.getElementById('retrievedFilesBox').style.display = 'block';
+                const list = document.getElementById('retrievedItemsList'); list.innerHTML = '';
+                metaData.files.forEach(f => {
+                    list.innerHTML += `<div class="retrieved-item"><span><i class="fa-regular fa-file"></i> ${f.originalname}</span><a href="/download/${pin}/${f.index}" download="${f.originalname}"><i class="fa-solid fa-download"></i> Download</a></div>`;
                 });
-
-                for (let i = 0; i < metaData.files.length; i++) {
-                    const fileInfo = metaData.files[i];
-                    const downloadUrl = `/download/${pin}/${fileInfo.index}`;
-                    
-                    const a = document.createElement('a');
-                    a.href = downloadUrl;
-                    a.download = fileInfo.originalname;
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-
-                    if (i < metaData.files.length - 1) {
-                        await new Promise(resolve => setTimeout(resolve, 400));
-                    }
-                }
-
-            } catch (err) {
-                errorBanner.innerText = '⚠️ Connection error or file not found.';
-                errorBanner.style.display = 'block';
-            }
-        }
-
-        function submitFeedback(e) {
-            e.preventDefault();
-            alert(`Thank you ${document.getElementById('fbName').value}! Feedback submitted successfully.`);
-            e.target.reset();
+            } catch (err) { alert('Error retrieving files.'); }
         }
     </script>
 </body>
