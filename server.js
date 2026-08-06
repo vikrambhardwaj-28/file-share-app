@@ -3,13 +3,15 @@ const multer = require('multer');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const zlib = require('zlib');
+const sharp = require('sharp');
+const { PDFDocument, rgb } = require('pdf-lib');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
 const uploadDir = path.join(__dirname, 'uploads');
@@ -71,99 +73,144 @@ app.post('/upload', upload.array('files', 10), (req, res) => {
 });
 
 /**
- * 2. AirCompress - Gzip/Deflate Binary Compression
+ * 2. AirCompress - Real Lossy/Lossless Compression
  */
-app.post('/compress', upload.array('files', 1), (req, res) => {
+app.post('/compress', upload.array('files', 1), async (req, res) => {
     if (!req.files || req.files.length === 0) {
         return res.status(400).json({ success: false, message: 'No file uploaded.' });
     }
 
     const originalFile = req.files[0];
-    const compressedFileName = `${originalFile.filename}.gz`;
+    const ext = path.extname(originalFile.originalname).toLowerCase();
+    const baseName = path.parse(originalFile.originalname).name;
+    const compressedFileName = `${Date.now()}-compressed-${baseName}${ext}`;
     const compressedPath = path.join(uploadDir, compressedFileName);
 
-    // Read original file and write compressed .gz stream
-    const fileContents = fs.readFileSync(originalFile.path);
-    const compressedBuffer = zlib.gzipSync(fileContents);
-    fs.writeFileSync(compressedPath, compressedBuffer);
+    try {
+        // Real Image Quality Compression via Sharp
+        if (['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) {
+            let sharpInstance = sharp(originalFile.path);
+            if (ext === '.jpg' || ext === '.jpeg') {
+                await sharpInstance.jpeg({ quality: 40 }).toFile(compressedPath);
+            } else if (ext === '.png') {
+                await sharpInstance.png({ quality: 40, compressionLevel: 8 }).toFile(compressedPath);
+            } else if (ext === '.webp') {
+                await sharpInstance.webp({ quality: 40 }).toFile(compressedPath);
+            }
+        } else {
+            // For other files, copy directly
+            fs.copyFileSync(originalFile.path, compressedPath);
+        }
 
-    // Delete uncompressed source from disk
-    fs.unlink(originalFile.path, () => {});
+        fs.unlink(originalFile.path, () => {});
 
-    const pin = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiryDurationMs = 60000;
+        const compressedSize = fs.statSync(compressedPath).size;
+        const pin = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiryDurationMs = 60000;
 
-    const compressedFileObj = {
-        path: compressedPath,
-        originalname: `${originalFile.originalname}.gz`,
-        size: compressedBuffer.length
-    };
+        activePins[pin] = {
+            files: [{
+                path: compressedPath,
+                originalname: `${baseName}-compressed${ext}`,
+                size: compressedSize
+            }],
+            expiresAt: Date.now() + expiryDurationMs,
+            downloadCount: 0,
+            maxDownloads: 3
+        };
 
-    activePins[pin] = {
-        files: [compressedFileObj],
-        expiresAt: Date.now() + expiryDurationMs,
-        downloadCount: 0,
-        maxDownloads: 3
-    };
+        setTimeout(() => purgeFiles(pin), expiryDurationMs);
 
-    setTimeout(() => purgeFiles(pin), expiryDurationMs);
+        return res.json({
+            success: true,
+            pin,
+            originalSize: originalFile.size,
+            compressedSize: compressedSize,
+            expiresInSeconds: 60
+        });
 
-    return res.json({
-        success: true,
-        pin,
-        originalSize: originalFile.size,
-        compressedSize: compressedBuffer.length,
-        expiresInSeconds: 60
-    });
+    } catch (err) {
+        console.error('Compress Error:', err);
+        return res.status(500).json({ success: false, message: 'Compression failed.' });
+    }
 });
 
 /**
- * 3. AirFormat - File Format Conversion Handler
+ * 3. AirFormat - Real Binary Image/PDF Format Conversion
  */
-app.post('/format', upload.array('files', 1), (req, res) => {
+app.post('/format', upload.array('files', 1), async (req, res) => {
     if (!req.files || req.files.length === 0) {
         return res.status(400).json({ success: false, message: 'No file uploaded.' });
     }
 
     const originalFile = req.files[0];
-    const targetFormat = (req.body.targetFormat || 'txt').toLowerCase();
-
+    const targetFormat = (req.body.targetFormat || 'pdf').toLowerCase();
     const baseName = path.parse(originalFile.originalname).name;
     const newFileName = `${Date.now()}-${baseName}.${targetFormat}`;
     const newFilePath = path.join(uploadDir, newFileName);
 
-    // Create transformed copy with requested file extension
-    fs.copyFileSync(originalFile.path, newFilePath);
-    fs.unlink(originalFile.path, () => {});
+    try {
+        const srcExt = path.extname(originalFile.originalname).toLowerCase();
 
-    const pin = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiryDurationMs = 60000;
+        // 1. Image to Image Conversion (PNG, JPG, WEBP)
+        if (['.jpg', '.jpeg', '.png', '.webp'].includes(srcExt) && ['jpg', 'jpeg', 'png', 'webp'].includes(targetFormat)) {
+            let sharpInstance = sharp(originalFile.path);
+            if (targetFormat === 'jpg' || targetFormat === 'jpeg') await sharpInstance.toFormat('jpeg').toFile(newFilePath);
+            else if (targetFormat === 'png') await sharpInstance.toFormat('png').toFile(newFilePath);
+            else if (targetFormat === 'webp') await sharpInstance.toFormat('webp').toFile(newFilePath);
+        } 
+        // 2. Image to PDF Conversion
+        else if (['.jpg', '.jpeg', '.png'].includes(srcExt) && targetFormat === 'pdf') {
+            const pdfDoc = await PDFDocument.create();
+            const imageBytes = fs.readFileSync(originalFile.path);
+            let img;
+            if (srcExt === '.png') img = await pdfDoc.embedPng(imageBytes);
+            else img = await pdfDoc.embedJpg(imageBytes);
 
-    const formattedFileObj = {
-        path: newFilePath,
-        originalname: `${baseName}.${targetFormat}`,
-        size: fs.statSync(newFilePath).size
-    };
+            const page = pdfDoc.addPage([img.width, img.height]);
+            page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
 
-    activePins[pin] = {
-        files: [formattedFileObj],
-        expiresAt: Date.now() + expiryDurationMs,
-        downloadCount: 0,
-        maxDownloads: 3
-    };
+            const pdfBytes = await pdfDoc.save();
+            fs.writeFileSync(newFilePath, pdfBytes);
+        }
+        // 3. Fallback Copy
+        else {
+            fs.copyFileSync(originalFile.path, newFilePath);
+        }
 
-    setTimeout(() => purgeFiles(pin), expiryDurationMs);
+        fs.unlink(originalFile.path, () => {});
 
-    return res.json({
-        success: true,
-        pin,
-        targetFormat,
-        expiresInSeconds: 60
-    });
+        const pin = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiryDurationMs = 60000;
+
+        activePins[pin] = {
+            files: [{
+                path: newFilePath,
+                originalname: `${baseName}.${targetFormat}`,
+                size: fs.statSync(newFilePath).size
+            }],
+            expiresAt: Date.now() + expiryDurationMs,
+            downloadCount: 0,
+            maxDownloads: 3
+        };
+
+        setTimeout(() => purgeFiles(pin), expiryDurationMs);
+
+        return res.json({
+            success: true,
+            pin,
+            targetFormat,
+            expiresInSeconds: 60
+        });
+
+    } catch (err) {
+        console.error('Format Error:', err);
+        return res.status(500).json({ success: false, message: 'Format conversion failed.' });
+    }
 });
 
 /**
- * API: Get File Metadata
+ * Fetch Metadata
  */
 app.get('/api/files/:pin', (req, res) => {
     const { pin } = req.params;
@@ -172,7 +219,7 @@ app.get('/api/files/:pin', (req, res) => {
     if (!record || Date.now() > record.expiresAt) {
         return res.status(410).json({
             success: false,
-            message: 'Invalid or expired PIN. Files deleted after 60 seconds.'
+            message: 'Invalid or expired PIN.'
         });
     }
 
@@ -186,7 +233,7 @@ app.get('/api/files/:pin', (req, res) => {
 });
 
 /**
- * Stream Download File
+ * Download Stream
  */
 app.get('/download/:pin/:index', (req, res) => {
     const { pin, index } = req.params;
