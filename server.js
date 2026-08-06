@@ -94,21 +94,36 @@ app.get('/api/files/:pin', (req, res) => {
 });
 
 /**
- * GET /download/:pin/:index
- * Downloads a specific file in its original format
+ * Route 1: Direct single file download /download/:pin
  */
-app.get('/download/:pin/:index?', (req, res) => {
+app.get('/download/:pin', (req, res) => {
+    const { pin } = req.params;
+    const record = activePins[pin];
+
+    if (!record || Date.now() > record.expiresAt) {
+        return res.status(410).json({ success: false, message: 'Invalid or expired PIN.' });
+    }
+
+    const targetFile = record.files[0];
+    if (!targetFile) {
+        return res.status(404).json({ success: false, message: 'File not found.' });
+    }
+
+    return res.download(targetFile.path, targetFile.originalname);
+});
+
+/**
+ * Route 2: Specific indexed file download /download/:pin/:index
+ */
+app.get('/download/:pin/:index', (req, res) => {
     const { pin, index } = req.params;
     const record = activePins[pin];
 
     if (!record || Date.now() > record.expiresAt) {
-        return res.status(410).json({
-            success: false,
-            message: 'Invalid or expired PIN.'
-        });
+        return res.status(410).json({ success: false, message: 'Invalid or expired PIN.' });
     }
 
-    const fileIdx = index ? parseInt(index, 10) : 0;
+    const fileIdx = parseInt(index, 10);
     const targetFile = record.files[fileIdx];
 
     if (!targetFile) {
