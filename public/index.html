@@ -3,226 +3,482 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AirShare - Secure File Transfer</title>
+    <title>AirShare - Modern Ephemeral File Transfer</title>
+    <!-- Google Fonts & FontAwesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         :root {
-            --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --danger: #dc2626;
-            --bg: #f8fafc;
-            --card-bg: #ffffff;
-            --text: #0f172a;
-            --muted: #64748b;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --accent: #06b6d4;
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --danger: #ef4444;
+            --success: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background: var(--bg-gradient);
+            color: var(--text-main);
             min-height: 100vh;
-            margin: 0;
-            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 15px;
         }
 
-        .container {
-            background: var(--card-bg);
-            padding: 32px;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+        .navbar {
             width: 100%;
-            max-width: 440px;
+            max-width: 900px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            margin-bottom: 20px;
         }
 
-        h1 {
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
             font-size: 1.5rem;
-            margin-bottom: 8px;
-            text-align: center;
+            font-weight: 800;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        p.subtitle {
-            font-size: 0.875rem;
-            color: var(--muted);
-            text-align: center;
-            margin-bottom: 24px;
-        }
-
-        .section {
-            margin-bottom: 24px;
-            padding-bottom: 24px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .section:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-
-        label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        input[type="file"], input[type="text"] {
+        .main-container {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 1rem;
-            margin-bottom: 12px;
+            max-width: 900px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
         }
 
-        button {
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-4px);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-desc {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        /* Drag & Drop Upload Zone */
+        .drop-zone {
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 14px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.02);
+            margin-bottom: 16px;
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--primary);
+            background: rgba(79, 70, 229, 0.08);
+        }
+
+        .drop-zone i {
+            font-size: 2.2rem;
+            color: var(--accent);
+            margin-bottom: 10px;
+        }
+
+        .drop-zone p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .btn {
             width: 100%;
-            background-color: var(--primary);
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
             color: white;
             border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 1rem;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
         }
 
-        button:hover {
-            background-color: var(--primary-hover);
+        .btn:hover {
+            opacity: 0.95;
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
         }
 
-        .pin-box {
-            display: none;
-            background: #eff6ff;
-            border: 1px border var(--primary);
+        .pin-input-group {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .pin-input-group input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--card-border);
             border-radius: 12px;
+            padding: 16px;
+            color: var(--text-main);
+            font-size: 1.2rem;
+            letter-spacing: 4px;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .pin-input-group input:focus {
+            border-color: var(--accent);
+        }
+
+        /* Generated PIN Box */
+        .pin-display-box {
+            display: none;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 14px;
             padding: 20px;
             text-align: center;
             margin-top: 16px;
+            animation: fadeIn 0.4s ease;
         }
 
-        .pin-number {
-            font-size: 2rem;
+        .pin-code {
+            font-size: 2.2rem;
             font-weight: 800;
-            letter-spacing: 6px;
-            color: var(--primary);
+            letter-spacing: 8px;
+            color: var(--success);
             margin: 8px 0;
         }
 
-        .countdown-timer {
-            font-size: 0.9rem;
+        .timer-badge {
+            font-size: 0.85rem;
             font-weight: 700;
             color: var(--danger);
-            margin-top: 6px;
+            background: rgba(239, 68, 68, 0.15);
+            padding: 4px 12px;
+            border-radius: 20px;
+            display: inline-block;
         }
 
-        .expired-msg {
-            color: var(--danger);
-            font-weight: 700;
-            margin-top: 8px;
+        /* Feedback Section */
+        .feedback-section {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 25px 30px;
+            margin-bottom: 40px;
+        }
+
+        .feedback-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 600px) {
+            .feedback-form {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .feedback-form input, .feedback-form textarea {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 12px;
+            color: white;
+            outline: none;
+            font-size: 0.9rem;
+        }
+
+        .feedback-form textarea {
+            grid-column: 1 / -1;
+            resize: none;
+            height: 80px;
+        }
+
+        .feedback-form button {
+            grid-column: 1 / -1;
+        }
+
+        /* Footer */
+        footer {
+            width: 100%;
+            max-width: 900px;
+            border-top: 1px solid var(--card-border);
+            padding-top: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            text-align: center;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .social-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-main);
+            font-size: 1.2rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .social-icon.insta:hover { background: #e1306c; border-color: #e1306c; transform: translateY(-3px); }
+        .social-icon.fb:hover { background: #1877f2; border-color: #1877f2; transform: translateY(-3px); }
+        .social-icon.mail:hover { background: #ea4335; border-color: #ea4335; transform: translateY(-3px); }
+
+        .copyright {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>AirShare</h1>
-    <p class="subtitle">Ephemeral 6-digit PIN file transfer</p>
-
-    <!-- Send File Section -->
-    <div class="section">
-        <label for="fileInput">Upload File</label>
-        <input type="file" id="fileInput">
-        <button onclick="uploadFile()">Generate Security PIN</button>
-
-        <div id="pinBox" class="pin-box">
-            <div style="font-size: 0.85rem; color: var(--muted);">YOUR 6-DIGIT SECURITY PIN</div>
-            <div id="pinDisplay" class="pin-number">------</div>
-            <div id="timerDisplay" class="countdown-timer">Expiring in 30s</div>
+    <!-- Top Navigation -->
+    <nav class="navbar">
+        <div class="brand">
+            <i class="fa-solid fa-bolt"></i> AirShare
         </div>
+        <span style="font-size: 0.85rem; color: var(--text-muted);"><i class="fa-solid fa-lock"></i> 256-bit Encrypted</span>
+    </nav>
+
+    <!-- Main Features Container -->
+    <div class="main-container">
+
+        <!-- Send File Card -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-paper-plane" style="color: var(--accent);"></i> Send File
+            </div>
+            <p class="card-desc">Upload a file to generate a 30-second single-use PIN.</p>
+
+            <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <p id="fileLabel">Drag & Drop file here or <span style="color: var(--accent); font-weight: 600;">Browse</span></p>
+            </div>
+            <input type="file" id="fileInput" onchange="updateFileName()">
+
+            <button class="btn" onclick="uploadFile()">
+                <i class="fa-solid fa-key"></i> Generate Security PIN
+            </button>
+
+            <div id="pinBox" class="pin-display-box">
+                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; letter-spacing: 1px;">YOUR 6-DIGIT PIN</span>
+                <div id="pinDisplay" class="pin-code">------</div>
+                <div id="timerDisplay" class="timer-badge">Expiring in 30s</div>
+            </div>
+        </div>
+
+        <!-- Receive File Card -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-download" style="color: var(--primary);"></i> Download File
+            </div>
+            <p class="card-desc">Enter the 6-digit PIN to download shared content.</p>
+
+            <div class="pin-input-group">
+                <input type="text" id="pinInput" placeholder="ENTER 6-DIGIT PIN" maxlength="6" autocomplete="off">
+            </div>
+
+            <button class="btn" style="background: linear-gradient(135deg, #06b6d4, #0284c7);" onclick="downloadFile()">
+                <i class="fa-solid fa-circle-down"></i> Retrieve File
+            </button>
+        </div>
+
     </div>
 
-    <!-- Receive File Section -->
-    <div class="section">
-        <label for="pinInput">Download File</label>
-        <input type="text" id="pinInput" placeholder="Enter 6-digit PIN" maxlength="6">
-        <button onclick="downloadFile()">Download File</button>
+    <!-- Feedback Section -->
+    <div class="feedback-section">
+        <div class="card-title">
+            <i class="fa-solid fa-comments" style="color: #c084fc;"></i> Send Us Your Feedback
+        </div>
+        <p class="card-desc">Have suggestions or facing issues? Let us know below.</p>
+        
+        <form class="feedback-form" onsubmit="submitFeedback(event)">
+            <input type="text" id="fbName" placeholder="Your Name" required>
+            <input type="email" id="fbEmail" placeholder="Your Email" required>
+            <textarea id="fbMessage" placeholder="Type your feedback message here..." required></textarea>
+            <button type="submit" class="btn" style="background: rgba(255,255,255,0.1); border: 1px solid var(--card-border);">
+                <i class="fa-solid fa-paper-plane"></i> Submit Feedback
+            </button>
+        </form>
     </div>
-</div>
 
-<script>
-    let countdownInterval;
+    <!-- Social Footer -->
+    <footer>
+        <div class="social-links">
+            <a href="https://www.instagram.com/vikrm_bhardwaj?igsh=OWh4ZHprbW5rNTZv" target="_blank" class="social-icon insta" title="Instagram">
+                <i class="fa-brands fa-instagram"></i>
+            </a>
+            <a href="https://www.facebook.com/share/196jZuggxg/" target="_blank" class="social-icon fb" title="Facebook">
+                <i class="fa-brands fa-facebook-f"></i>
+            </a>
+            <a href="mailto:vikram.2872006@gmail.com" class="social-icon mail" title="Email Me">
+                <i class="fa-solid fa-envelope"></i>
+            </a>
+        </div>
+        <p class="copyright">Designed & Developed by <strong>Vikram Bhardwaj</strong> • Powered by Node.js & Render</p>
+    </footer>
 
-    async function uploadFile() {
-        const fileInput = document.getElementById('fileInput');
-        if (!fileInput.files.length) {
-            alert('Please select a file to upload.');
-            return;
-        }
+    <!-- Logic Script -->
+    <script>
+        let countdownInterval;
 
-        const formData = new FormData();
-        formData.append('file', fileInput.files[0]);
-
-        try {
-            const response = await fetch('/upload', {
-                method: 'POST',
-                body: formData
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                displayPinAndStartTimer(data.pin, data.expiresInSeconds);
-            } else {
-                alert(data.message || 'Upload failed.');
+        function updateFileName() {
+            const fileInput = document.getElementById('fileInput');
+            const fileLabel = document.getElementById('fileLabel');
+            if (fileInput.files.length > 0) {
+                fileLabel.innerHTML = `Selected: <strong style="color: #fff;">${fileInput.files[0].name}</strong>`;
             }
-        } catch (error) {
-            alert('An error occurred while uploading the file.');
         }
-    }
 
-    function displayPinAndStartTimer(pin, durationSeconds) {
-        const pinBox = document.getElementById('pinBox');
-        const pinDisplay = document.getElementById('pinDisplay');
-        const timerDisplay = document.getElementById('timerDisplay');
+        // Drag & Drop handlers
+        const dropZone = document.getElementById('dropZone');
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+        });
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            document.getElementById('fileInput').files = dt.files;
+            updateFileName();
+        });
 
-        pinBox.style.display = 'block';
-        pinDisplay.innerText = pin;
-
-        let timeRemaining = durationSeconds;
-        timerDisplay.innerHTML = `Expiring in <strong>${timeRemaining}s</strong>`;
-
-        clearInterval(countdownInterval);
-
-        countdownInterval = setInterval(() => {
-            timeRemaining--;
-
-            if (timeRemaining > 0) {
-                timerDisplay.innerHTML = `Expiring in <strong>${timeRemaining}s</strong>`;
-            } else {
-                clearInterval(countdownInterval);
-                pinDisplay.innerText = '------';
-                timerDisplay.className = 'expired-msg';
-                timerDisplay.innerText = '⚠️ PIN Expired! File permanently deleted.';
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files.length) {
+                alert('Please choose a file to upload first.');
+                return;
             }
-        }, 1000);
-    }
 
-    function downloadFile() {
-        const pin = document.getElementById('pinInput').value.trim();
-        if (pin.length !== 6 || isNaN(pin)) {
-            alert('Please enter a valid 6-digit PIN.');
-            return;
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const response = await fetch('/upload', { method: 'POST', body: formData });
+                const data = await response.json();
+
+                if (data.success) {
+                    startCountdown(data.pin, data.expiresInSeconds);
+                } else {
+                    alert(data.message || 'Upload failed.');
+                }
+            } catch (err) {
+                alert('Connection error while uploading.');
+            }
         }
 
-        // Trigger file download request
-        window.location.href = `/download/${pin}`;
-    }
-</script>
+        function startCountdown(pin, durationSeconds) {
+            const pinBox = document.getElementById('pinBox');
+            const pinDisplay = document.getElementById('pinDisplay');
+            const timerDisplay = document.getElementById('timerDisplay');
 
+            pinBox.style.display = 'block';
+            pinDisplay.innerText = pin;
+
+            let timeLeft = durationSeconds;
+            timerDisplay.innerText = `Expiring in ${timeLeft}s`;
+
+            clearInterval(countdownInterval);
+
+            countdownInterval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft > 0) {
+                    timerDisplay.innerText = `Expiring in ${timeLeft}s`;
+                } else {
+                    clearInterval(countdownInterval);
+                    pinDisplay.innerText = '------';
+                    timerDisplay.innerText = '⚠️ PIN Expired! File Deleted.';
+                }
+            }, 1000);
+        }
+
+        function downloadFile() {
+            const pin = document.getElementById('pinInput').value.trim();
+            if (pin.length !== 6 || isNaN(pin)) {
+                alert('Please enter a valid 6-digit numerical PIN.');
+                return;
+            }
+            window.location.href = `/download/${pin}`;
+        }
+
+        function submitFeedback(e) {
+            e.preventDefault();
+            const name = document.getElementById('fbName').value;
+            alert(`Thank you ${name}! Your feedback has been received.`);
+            e.target.reset();
+        }
+    </script>
 </body>
 </html>
