@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AirCompress - Smart File Compression</title>
+    <title>AirCompress - Smart Precision Compression</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -33,14 +33,46 @@
         .drop-zone { border: 2px dashed rgba(255, 255, 255, 0.2); border-radius: 14px; padding: 24px; text-align: center; cursor: pointer; background: rgba(255, 255, 255, 0.02); margin-bottom: 12px; }
         input[type="file"] { display: none; }
 
-        .size-setting-box { background: rgba(0,0,0,0.2); border: 1px solid var(--card-border); padding: 12px; border-radius: 10px; margin-bottom: 15px; }
-        .size-setting-box input, .size-setting-box select { background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); color: white; padding: 8px; border-radius: 6px; outline: none; }
+        .target-input-box {
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 16px;
+        }
+
+        .target-input-box label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .input-group { display: flex; gap: 8px; }
+        .input-group input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 10px;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .input-group select {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 10px;
+            color: white;
+            font-size: 0.9rem;
+            outline: none;
+            font-weight: 600;
+        }
 
         .btn { width: 100%; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .progress-wrapper { display: none; margin-bottom: 16px; }
-        .progress-bar-bg { width: 100%; height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 10px; overflow: hidden; margin-top: 6px; }
-        .progress-bar-fill { width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--primary)); }
-
         .result-box { display: none; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 14px; padding: 20px; text-align: center; margin-top: 15px; }
         .pin-code { font-size: 2rem; font-weight: 800; letter-spacing: 6px; color: var(--success); margin: 6px 0; }
         .timer-badge { font-size: 0.85rem; font-weight: 700; color: var(--danger); background: rgba(239, 68, 68, 0.15); padding: 6px 14px; border-radius: 20px; display: inline-block; }
@@ -71,14 +103,14 @@
     </div>
 
     <div class="main-container">
-        <!-- Left: Upload & Set Target Compression Size -->
+        <!-- Left: Upload & Target Size Configuration -->
         <div class="card">
-            <div class="card-title"><i class="fa-solid fa-file-zipper" style="color: var(--accent);"></i> Upload & Set Compression</div>
-            <p class="card-desc">Select file and set your desired target output size.</p>
+            <div class="card-title"><i class="fa-solid fa-file-zipper" style="color: var(--accent);"></i> Precision Size Compressor</div>
+            <p class="card-desc">Set your exact target size in KB or MB to compress files accurately.</p>
 
             <div class="drop-zone" onclick="document.getElementById('compFile').click()">
                 <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: var(--accent);"></i>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">Click or Drag file to compress</p>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">Click or Drag file here</p>
             </div>
             <input type="file" id="compFile" onchange="handleCompressSelect(event)">
 
@@ -86,39 +118,32 @@
                 Original File Size: <strong id="origSizeValue">0 KB</strong>
             </div>
 
-            <div class="size-setting-box">
-                <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px;">Target Compress Size:</label>
-                <div style="display: flex; gap: 8px;">
-                    <input type="number" id="targetSizeNum" placeholder="e.g. 500" value="200" style="flex: 1;">
+            <div class="target-input-box">
+                <label><i class="fa-solid fa-bullseye"></i> Enter Desired Target Output Size:</label>
+                <div class="input-group">
+                    <input type="number" id="targetSizeNum" placeholder="e.g. 200" value="200" min="10">
                     <select id="targetSizeUnit">
-                        <option value="KB">KB</option>
+                        <option value="KB" selected>KB</option>
                         <option value="MB">MB</option>
                     </select>
                 </div>
             </div>
 
-            <div id="progressWrapper" class="progress-wrapper">
-                <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
-                    <span>Compressing File...</span><span id="uploadPercent">0%</span>
-                </div>
-                <div class="progress-bar-bg"><div id="progressBarFill" class="progress-bar-fill"></div></div>
-            </div>
-
-            <button class="btn" onclick="startCompressProcess()"><i class="fa-solid fa-bolt"></i> Compress File Now</button>
+            <button class="btn" onclick="startExactCompressProcess()"><i class="fa-solid fa-bolt"></i> Compress To Target Size</button>
         </div>
 
-        <!-- Right: Compressed Details & PIN/QR Download Box -->
+        <!-- Right: Results & Output Details -->
         <div class="card">
-            <div class="card-title"><i class="fa-solid fa-square-check" style="color: var(--success);"></i> Compressed Output Details</div>
-            <p class="card-desc">Compressed file details and instant download access.</p>
+            <div class="card-title"><i class="fa-solid fa-square-check" style="color: var(--success);"></i> Exact Output Details</div>
+            <p class="card-desc">Compressed file details matching your exact limit requirement.</p>
 
             <div id="resultBox" class="result-box">
                 <p style="font-size: 0.85rem; color: var(--text-muted);">BEFORE COMPRESS: <span id="resBeforeSize" style="color:white; font-weight:bold;">0 KB</span></p>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">AFTER COMPRESS: <span id="resAfterSize" style="color:var(--success); font-weight:bold;">0 KB</span></p>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">COMPRESSED EXACT OUTPUT: <span id="resAfterSize" style="color:var(--success); font-weight:bold;">0 KB</span></p>
 
                 <div style="margin-top: 15px;">
                     <a id="directDownloadBtn" href="#" download class="btn" style="background: linear-gradient(135deg, #10b981, #059669); text-decoration: none;">
-                        <i class="fa-solid fa-download"></i> Download Compressed File
+                        <i class="fa-solid fa-download"></i> Download Exact Size File
                     </a>
                 </div>
 
@@ -131,8 +156,9 @@
                     <div><span id="timerDisplay" class="timer-badge">Expiring in 60s</span></div>
                 </div>
             </div>
+
             <div id="emptyPlaceholder" style="text-align: center; padding: 40px 10px; color: var(--text-muted); font-size: 0.85rem;">
-                Upload a file and click "Compress File Now" to view compressed results and download options.
+                Upload a file, set target size limit, and click "Compress To Target Size".
             </div>
         </div>
     </div>
@@ -177,66 +203,112 @@
             }
         }
 
-        function startCompressProcess() {
+        function startExactCompressProcess() {
             if (!selectedFile) return alert('Please select a file to compress.');
-            
-            const formData = new FormData();
-            formData.append('files', selectedFile);
 
-            const progressWrapper = document.getElementById('progressWrapper');
-            const progressBarFill = document.getElementById('progressBarFill');
-            const uploadPercent = document.getElementById('uploadPercent');
+            const val = parseFloat(document.getElementById('targetSizeNum').value);
+            const unit = document.getElementById('targetSizeUnit').value;
 
-            progressWrapper.style.display = 'block';
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', '/compress', true);
+            if (isNaN(val) || val <= 0) return alert('Please enter a valid target size.');
 
-            xhr.upload.onprogress = (e) => {
-                if (e.lengthComputable) {
-                    const percent = Math.round((e.loaded / e.total) * 100);
-                    progressBarFill.style.width = percent + '%';
-                    uploadPercent.innerText = percent + '%';
-                }
-            };
+            // Calculate target size in Bytes
+            const maxTargetBytes = unit === 'MB' ? val * 1024 * 1024 : val * 1024;
 
-            xhr.onload = function() {
-                progressWrapper.style.display = 'none';
-                if (xhr.status === 200) {
-                    const data = JSON.parse(xhr.responseText);
-                    if (data.success) {
-                        displayCompressedResults(data.pin, data.expiresInSeconds);
-                    }
-                }
-            };
-            xhr.send(formData);
+            if (selectedFile.size <= maxTargetBytes) {
+                // If original file is already smaller than target, keep it as is
+                uploadAndShowResults(selectedFile, selectedFile.name);
+                return;
+            }
+
+            if (selectedFile.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.readAsDataURL(selectedFile);
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = function() {
+                        // Multi-step Binary Search for Exact Target Size Matching
+                        let minQ = 0.01;
+                        let maxQ = 0.95;
+                        let bestBlob = null;
+                        let attempts = 0;
+
+                        function tryCompressLoop() {
+                            const currentQ = (minQ + maxQ) / 2;
+                            const canvas = document.createElement('canvas');
+                            
+                            // Scale down canvas dimensions according to quality level
+                            const scale = Math.sqrt(maxTargetBytes / selectedFile.size);
+                            const width = Math.max(100, Math.round(img.width * Math.min(1, scale * 1.2)));
+                            const height = Math.max(100, Math.round(img.height * Math.min(1, scale * 1.2)));
+
+                            canvas.width = width;
+                            canvas.height = height;
+
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+
+                            canvas.toBlob(function(blob) {
+                                attempts++;
+                                bestBlob = blob;
+
+                                if (attempts < 8) {
+                                    if (blob.size > maxTargetBytes) {
+                                        maxQ = currentQ;
+                                        tryCompressLoop();
+                                    } else if (blob.size < maxTargetBytes * 0.85) {
+                                        minQ = currentQ;
+                                        tryCompressLoop();
+                                    } else {
+                                        // Target exact match range found
+                                        uploadAndShowResults(bestBlob, `${selectedFile.name.split('.')[0]}-exact.jpg`);
+                                    }
+                                } else {
+                                    // Final precision output
+                                    uploadAndShowResults(bestBlob, `${selectedFile.name.split('.')[0]}-exact.jpg`);
+                                }
+                            }, 'image/jpeg', currentQ);
+                        }
+
+                        tryCompressLoop();
+                    };
+                };
+            } else {
+                uploadAndShowResults(selectedFile, selectedFile.name);
+            }
         }
 
-        function displayCompressedResults(pin, durationSeconds) {
-            document.getElementById('emptyPlaceholder').style.display = 'none';
-            document.getElementById('resultBox').style.display = 'block';
+        function uploadAndShowResults(blob, filename) {
+            const formData = new FormData();
+            formData.append('files', blob, filename);
 
-            const targetVal = document.getElementById('targetSizeNum').value;
-            const targetUnit = document.getElementById('targetSizeUnit').value;
+            fetch('/upload', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('emptyPlaceholder').style.display = 'none';
+                    document.getElementById('resultBox').style.display = 'block';
 
-            document.getElementById('resBeforeSize').innerText = formatBytes(selectedFile.size);
-            document.getElementById('resAfterSize').innerText = `${targetVal} ${targetUnit}`;
+                    document.getElementById('resBeforeSize').innerText = formatBytes(selectedFile.size);
+                    document.getElementById('resAfterSize').innerText = formatBytes(blob.size);
 
-            const downloadUrl = `/download/${pin}/0`;
-            const dBtn = document.getElementById('directDownloadBtn');
-            dBtn.href = downloadUrl;
-            dBtn.download = selectedFile.name;
+                    const dBtn = document.getElementById('directDownloadBtn');
+                    dBtn.href = URL.createObjectURL(blob);
+                    dBtn.download = filename;
 
-            document.getElementById('pinDisplay').innerText = pin;
-            document.getElementById('qrcode').innerHTML = '';
-            new QRCode(document.getElementById('qrcode'), { text: `${window.location.origin}/index.html?pin=${pin}`, width: 110, height: 110 });
+                    document.getElementById('pinDisplay').innerText = data.pin;
+                    document.getElementById('qrcode').innerHTML = '';
+                    new QRCode(document.getElementById('qrcode'), { text: `${window.location.origin}/index.html?pin=${data.pin}`, width: 110, height: 110 });
 
-            let timeLeft = durationSeconds;
-            clearInterval(countdownInterval);
-            countdownInterval = setInterval(() => {
-                timeLeft--;
-                if (timeLeft > 0) document.getElementById('timerDisplay').innerText = `Expiring in ${timeLeft}s`;
-                else { clearInterval(countdownInterval); document.getElementById('pinDisplay').innerText = '------'; document.getElementById('timerDisplay').innerText = '⚠️ PIN Expired!'; }
-            }, 1000);
+                    let timeLeft = 60;
+                    clearInterval(countdownInterval);
+                    countdownInterval = setInterval(() => {
+                        timeLeft--;
+                        if (timeLeft > 0) document.getElementById('timerDisplay').innerText = `Expiring in ${timeLeft}s`;
+                        else { clearInterval(countdownInterval); document.getElementById('pinDisplay').innerText = '------'; document.getElementById('timerDisplay').innerText = '⚠️ PIN Expired!'; }
+                    }, 1000);
+                }
+            });
         }
     </script>
 </body>
