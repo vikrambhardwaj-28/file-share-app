@@ -4,7 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const sharp = require('sharp');
-const { PDFDocument, rgb } = require('pdf-lib');
+const { PDFDocument } = require('pdf-lib');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -45,7 +45,7 @@ function purgeFiles(pin) {
 }
 
 /**
- * 1. AirShare Standard Upload
+ * AirShare - Multi Upload
  */
 app.post('/upload', upload.array('files', 10), (req, res) => {
     if (!req.files || req.files.length === 0) {
@@ -63,17 +63,11 @@ app.post('/upload', upload.array('files', 10), (req, res) => {
     };
 
     setTimeout(() => purgeFiles(pin), expiryDurationMs);
-
-    return res.json({
-        success: true,
-        pin,
-        fileCount: req.files.length,
-        expiresInSeconds: 60
-    });
+    return res.json({ success: true, pin, fileCount: req.files.length, expiresInSeconds: 60 });
 });
 
 /**
- * 2. AirCompress - Real Lossy/Lossless Compression
+ * AirCompress - REAL Image Dimensions & Quality Reduction
  */
 app.post('/compress', upload.array('files', 1), async (req, res) => {
     if (!req.files || req.files.length === 0) {
@@ -83,22 +77,23 @@ app.post('/compress', upload.array('files', 1), async (req, res) => {
     const originalFile = req.files[0];
     const ext = path.extname(originalFile.originalname).toLowerCase();
     const baseName = path.parse(originalFile.originalname).name;
-    const compressedFileName = `${Date.now()}-compressed-${baseName}${ext}`;
+    const compressedFileName = `${Date.now()}-comp-${baseName}${ext}`;
     const compressedPath = path.join(uploadDir, compressedFileName);
 
     try {
-        // Real Image Quality Compression via Sharp
         if (['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) {
-            let sharpInstance = sharp(originalFile.path);
+            // High compression using scale resize and lossy quality
+            let pipeline = sharp(originalFile.path).resize({ width: 1000, withoutEnlargement: true });
+            
             if (ext === '.jpg' || ext === '.jpeg') {
-                await sharpInstance.jpeg({ quality: 40 }).toFile(compressedPath);
+                await pipeline.jpeg({ quality: 25, progressive: true }).toFile(compressedPath);
             } else if (ext === '.png') {
-                await sharpInstance.png({ quality: 40, compressionLevel: 8 }).toFile(compressedPath);
+                await pipeline.png({ quality: 25, compressionLevel: 9 }).toFile(compressedPath);
             } else if (ext === '.webp') {
-                await sharpInstance.webp({ quality: 40 }).toFile(compressedPath);
+                await pipeline.webp({ quality: 25 }).toFile(compressedPath);
             }
         } else {
-            // For other files, copy directly
+            // Fallback for non-image files
             fs.copyFileSync(originalFile.path, compressedPath);
         }
 
@@ -136,7 +131,7 @@ app.post('/compress', upload.array('files', 1), async (req, res) => {
 });
 
 /**
- * 3. AirFormat - Real Binary Image/PDF Format Conversion
+ * AirFormat - REAL Binary Conversion (Image to Image / Image to PDF)
  */
 app.post('/format', upload.array('files', 1), async (req, res) => {
     if (!req.files || req.files.length === 0) {
@@ -144,7 +139,7 @@ app.post('/format', upload.array('files', 1), async (req, res) => {
     }
 
     const originalFile = req.files[0];
-    const targetFormat = (req.body.targetFormat || 'pdf').toLowerCase();
+    const targetFormat = (req.body.targetFormat || 'pdf').toLowerCase().trim();
     const baseName = path.parse(originalFile.originalname).name;
     const newFileName = `${Date.now()}-${baseName}.${targetFormat}`;
     const newFilePath = path.join(uploadDir, newFileName);
@@ -152,20 +147,25 @@ app.post('/format', upload.array('files', 1), async (req, res) => {
     try {
         const srcExt = path.extname(originalFile.originalname).toLowerCase();
 
-        // 1. Image to Image Conversion (PNG, JPG, WEBP)
+        // 1. Image to Image Conversion (PNG <-> JPG <-> WEBP)
         if (['.jpg', '.jpeg', '.png', '.webp'].includes(srcExt) && ['jpg', 'jpeg', 'png', 'webp'].includes(targetFormat)) {
-            let sharpInstance = sharp(originalFile.path);
-            if (targetFormat === 'jpg' || targetFormat === 'jpeg') await sharpInstance.toFormat('jpeg').toFile(newFilePath);
-            else if (targetFormat === 'png') await sharpInstance.toFormat('png').toFile(newFilePath);
-            else if (targetFormat === 'webp') await sharpInstance.toFormat('webp').toFile(newFilePath);
+            let pipeline = sharp(originalFile.path);
+            if (targetFormat === 'jpg' || targetFormat === 'jpeg') {
+                await pipeline.toFormat('jpeg').toFile(newFilePath);
+            } else if (targetFormat === 'png') {
+                await pipeline.toFormat('png').toFile(newFilePath);
+            } else if (targetFormat === 'webp') {
+                await pipeline.toFormat('webp').toFile(newFilePath);
+            }
         } 
-        // 2. Image to PDF Conversion
+        // 2. Image (JPG/PNG) -> Valid Printable PDF Conversion
         else if (['.jpg', '.jpeg', '.png'].includes(srcExt) && targetFormat === 'pdf') {
             const pdfDoc = await PDFDocument.create();
             const imageBytes = fs.readFileSync(originalFile.path);
-            let img;
-            if (srcExt === '.png') img = await pdfDoc.embedPng(imageBytes);
-            else img = await pdfDoc.embedJpg(imageBytes);
+            
+            let img = (srcExt === '.png') 
+                ? await pdfDoc.embedPng(imageBytes) 
+                : await pdfDoc.embedJpg(imageBytes);
 
             const page = pdfDoc.addPage([img.width, img.height]);
             page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
@@ -173,9 +173,20 @@ app.post('/format', upload.array('files', 1), async (req, res) => {
             const pdfBytes = await pdfDoc.save();
             fs.writeFileSync(newFilePath, pdfBytes);
         }
-        // 3. Fallback Copy
+        // 3. Text to PDF or TXT Conversion
+        else if (srcExt === '.txt' && targetFormat === 'pdf') {
+            const pdfDoc = await PDFDocument.create();
+            const page = pdfDoc.addPage([600, 800]);
+            const textContent = fs.readFileSync(originalFile.path, 'utf8');
+            page.drawText(textContent.slice(0, 1000), { x: 50, y: 700, size: 12 });
+            const pdfBytes = await pdfDoc.save();
+            fs.writeFileSync(newFilePath, pdfBytes);
+        }
         else {
-            fs.copyFileSync(originalFile.path, newFilePath);
+            return res.status(400).json({ 
+                success: false, 
+                message: `Conversion from ${srcExt} to .${targetFormat} is not directly supported.` 
+            });
         }
 
         fs.unlink(originalFile.path, () => {});
@@ -196,12 +207,7 @@ app.post('/format', upload.array('files', 1), async (req, res) => {
 
         setTimeout(() => purgeFiles(pin), expiryDurationMs);
 
-        return res.json({
-            success: true,
-            pin,
-            targetFormat,
-            expiresInSeconds: 60
-        });
+        return res.json({ success: true, pin, targetFormat, expiresInSeconds: 60 });
 
     } catch (err) {
         console.error('Format Error:', err);
@@ -209,18 +215,12 @@ app.post('/format', upload.array('files', 1), async (req, res) => {
     }
 });
 
-/**
- * Fetch Metadata
- */
 app.get('/api/files/:pin', (req, res) => {
     const { pin } = req.params;
     const record = activePins[pin];
 
     if (!record || Date.now() > record.expiresAt) {
-        return res.status(410).json({
-            success: false,
-            message: 'Invalid or expired PIN.'
-        });
+        return res.status(410).json({ success: false, message: 'Invalid or expired PIN.' });
     }
 
     const fileList = record.files.map((file, index) => ({
@@ -232,9 +232,6 @@ app.get('/api/files/:pin', (req, res) => {
     return res.json({ success: true, files: fileList });
 });
 
-/**
- * Download Stream
- */
 app.get('/download/:pin/:index', (req, res) => {
     const { pin, index } = req.params;
     const record = activePins[pin];
@@ -260,6 +257,4 @@ app.get('/download/:pin/:index', (req, res) => {
     return res.download(targetFile.path, targetFile.originalname);
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -373,12 +373,6 @@
                         <option value="png">PNG (.png)</option>
                         <option value="jpg">JPG (.jpg)</option>
                         <option value="webp">WEBP (.webp)</option>
-                        <option value="svg">SVG (.svg)</option>
-                    </optgroup>
-                    <optgroup label="Audio / Video Formats">
-                        <option value="mp3">MP3 (.mp3)</option>
-                        <option value="wav">WAV (.wav)</option>
-                        <option value="mp4">MP4 (.mp4)</option>
                     </optgroup>
                 </select>
             </div>
@@ -503,8 +497,10 @@
             
             const targetFormat = document.getElementById('targetFormatSelect').value;
             const formData = new FormData();
-            formData.append('files', selectedFile);
+
+            // ⚠️ DATA SEQUENCE SYNC: Append text parameters BEFORE file binary payloads
             formData.append('targetFormat', targetFormat);
+            formData.append('files', selectedFile);
 
             const progressWrapper = document.getElementById('progressWrapper');
             const progressBarFill = document.getElementById('progressBarFill');
@@ -531,6 +527,8 @@
                     if (data.success) {
                         playSound('success');
                         displayFormatResults(data.pin, data.expiresInSeconds);
+                    } else {
+                        alert(data.message || 'Format conversion failed.');
                     }
                 } else {
                     alert('Format conversion failed.');
