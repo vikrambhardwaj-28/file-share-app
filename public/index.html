@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AirShare - Modern Ephemeral File Transfer</title>
+    <title>AirShare - Secure File Transfer</title>
+
+    <!-- Custom Favicon (Replaces Globe Icon in Browser Tab) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+
     <!-- Google Fonts & FontAwesome Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -22,12 +26,7 @@
             --success: #10b981;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
 
         body {
             background: var(--bg-gradient);
@@ -53,7 +52,7 @@
         .brand {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             font-size: 1.5rem;
             font-weight: 800;
             background: linear-gradient(to right, #818cf8, #c084fc);
@@ -73,17 +72,10 @@
         .card {
             background: var(--card-bg);
             backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--card-border);
             border-radius: 20px;
             padding: 30px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-            transition: transform 0.3s ease, border-color 0.3s ease;
-        }
-
-        .card:hover {
-            border-color: rgba(255, 255, 255, 0.2);
-            transform: translateY(-4px);
         }
 
         .card-title {
@@ -95,43 +87,62 @@
             gap: 10px;
         }
 
-        .card-desc {
-            font-size: 0.875rem;
-            color: var(--text-muted);
-            margin-bottom: 20px;
-        }
+        .card-desc { font-size: 0.875rem; color: var(--text-muted); margin-bottom: 20px; }
 
-        /* Drag & Drop Upload Zone */
         .drop-zone {
             border: 2px dashed rgba(255, 255, 255, 0.2);
             border-radius: 14px;
-            padding: 30px 20px;
+            padding: 24px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
             background: rgba(255, 255, 255, 0.02);
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
 
-        .drop-zone:hover, .drop-zone.dragover {
-            border-color: var(--primary);
-            background: rgba(79, 70, 229, 0.08);
+        .drop-zone:hover { border-color: var(--primary); background: rgba(79, 70, 229, 0.08); }
+
+        /* File List Container */
+        .file-list {
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 150px;
+            overflow-y: auto;
         }
 
-        .drop-zone i {
-            font-size: 2.2rem;
+        .file-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+
+        .file-item i.remove-btn { color: var(--danger); cursor: pointer; }
+
+        .add-more-btn {
+            background: transparent;
+            border: 1px dashed var(--accent);
             color: var(--accent);
-            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 8px;
+            width: 100%;
+            cursor: pointer;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
-        .drop-zone p {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
+        .add-more-btn:hover { background: rgba(6, 182, 212, 0.1); }
 
-        input[type="file"] {
-            display: none;
-        }
+        input[type="file"] { display: none; }
 
         .btn {
             width: 100%;
@@ -147,17 +158,6 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            transition: all 0.2s ease;
-        }
-
-        .btn:hover {
-            opacity: 0.95;
-            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
-        }
-
-        .pin-input-group {
-            position: relative;
-            margin-bottom: 16px;
         }
 
         .pin-input-group input {
@@ -171,14 +171,9 @@
             letter-spacing: 4px;
             text-align: center;
             outline: none;
-            transition: border-color 0.3s;
+            margin-bottom: 16px;
         }
 
-        .pin-input-group input:focus {
-            border-color: var(--accent);
-        }
-
-        /* Generated PIN Box */
         .pin-display-box {
             display: none;
             background: rgba(16, 185, 129, 0.1);
@@ -187,25 +182,22 @@
             padding: 20px;
             text-align: center;
             margin-top: 16px;
-            animation: fadeIn 0.4s ease;
         }
 
-        .pin-code {
-            font-size: 2.2rem;
-            font-weight: 800;
-            letter-spacing: 8px;
-            color: var(--success);
-            margin: 8px 0;
-        }
+        .pin-code { font-size: 2.2rem; font-weight: 800; letter-spacing: 8px; color: var(--success); margin: 8px 0; }
+        .timer-badge { font-size: 0.85rem; font-weight: 700; color: var(--danger); background: rgba(239, 68, 68, 0.15); padding: 4px 12px; border-radius: 20px; display: inline-block; }
 
-        .timer-badge {
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: var(--danger);
+        /* Same-Page Error Banner */
+        .error-banner {
+            display: none;
             background: rgba(239, 68, 68, 0.15);
-            padding: 4px 12px;
-            border-radius: 20px;
-            display: inline-block;
+            border: 1px solid var(--danger);
+            color: #fca5a5;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            margin-top: 12px;
+            text-align: center;
         }
 
         /* Feedback Section */
@@ -220,40 +212,12 @@
             margin-bottom: 40px;
         }
 
-        .feedback-form {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 15px;
-        }
+        .feedback-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+        @media (max-width: 600px) { .feedback-form { grid-template-columns: 1fr; } }
+        .feedback-form input, .feedback-form textarea { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px; color: white; outline: none; }
+        .feedback-form textarea { grid-column: 1 / -1; resize: none; height: 80px; }
+        .feedback-form button { grid-column: 1 / -1; }
 
-        @media (max-width: 600px) {
-            .feedback-form {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .feedback-form input, .feedback-form textarea {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--card-border);
-            border-radius: 10px;
-            padding: 12px;
-            color: white;
-            outline: none;
-            font-size: 0.9rem;
-        }
-
-        .feedback-form textarea {
-            grid-column: 1 / -1;
-            resize: none;
-            height: 80px;
-        }
-
-        .feedback-form button {
-            grid-column: 1 / -1;
-        }
-
-        /* Footer */
         footer {
             width: 100%;
             max-width: 900px;
@@ -266,73 +230,53 @@
             text-align: center;
         }
 
-        .social-links {
-            display: flex;
-            gap: 20px;
-        }
-
+        .social-links { display: flex; gap: 20px; }
         .social-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--card-border);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-main);
-            font-size: 1.2rem;
-            text-decoration: none;
-            transition: all 0.3s ease;
+            width: 44px; height: 44px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-main); font-size: 1.2rem; text-decoration: none;
         }
-
-        .social-icon.insta:hover { background: #e1306c; border-color: #e1306c; transform: translateY(-3px); }
-        .social-icon.fb:hover { background: #1877f2; border-color: #1877f2; transform: translateY(-3px); }
-        .social-icon.mail:hover { background: #ea4335; border-color: #ea4335; transform: translateY(-3px); }
-
-        .copyright {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .social-icon.insta:hover { background: #e1306c; }
+        .social-icon.fb:hover { background: #1877f2; }
+        .social-icon.mail:hover { background: #ea4335; }
     </style>
 </head>
 <body>
 
-    <!-- Top Navigation -->
     <nav class="navbar">
         <div class="brand">
-            <i class="fa-solid fa-bolt"></i> AirShare
+            <i class="fa-solid fa-bolt" style="color: var(--accent);"></i> AirShare
         </div>
-        <span style="font-size: 0.85rem; color: var(--text-muted);"><i class="fa-solid fa-lock"></i> 256-bit Encrypted</span>
+        <span style="font-size: 0.85rem; color: var(--text-muted);"><i class="fa-solid fa-lock"></i> End-to-End Secure</span>
     </nav>
 
-    <!-- Main Features Container -->
     <div class="main-container">
-
         <!-- Send File Card -->
         <div class="card">
             <div class="card-title">
-                <i class="fa-solid fa-paper-plane" style="color: var(--accent);"></i> Send File
+                <i class="fa-solid fa-paper-plane" style="color: var(--accent);"></i> Send Files
             </div>
-            <p class="card-desc">Upload a file to generate a 30-second single-use PIN.</p>
+            <p class="card-desc">Upload files to generate a 30-second security PIN.</p>
 
-            <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-                <i class="fa-solid fa-cloud-arrow-up"></i>
-                <p id="fileLabel">Drag & Drop file here or <span style="color: var(--accent); font-weight: 600;">Browse</span></p>
+            <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
+                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: var(--accent);"></i>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">Click or Drag files here</p>
             </div>
-            <input type="file" id="fileInput" onchange="updateFileName()">
+            <input type="file" id="fileInput" multiple onchange="handleFileSelect(event)">
 
-            <button class="btn" onclick="uploadFile()">
+            <div id="fileList" class="file-list"></div>
+
+            <button id="addMoreBtn" class="add-more-btn" style="display: none;" onclick="document.getElementById('fileInput').click()">
+                <i class="fa-solid fa-plus"></i> Add More Files
+            </button>
+
+            <button class="btn" onclick="uploadFiles()">
                 <i class="fa-solid fa-key"></i> Generate Security PIN
             </button>
 
             <div id="pinBox" class="pin-display-box">
-                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; letter-spacing: 1px;">YOUR 6-DIGIT PIN</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">YOUR 6-DIGIT PIN</span>
                 <div id="pinDisplay" class="pin-code">------</div>
                 <div id="timerDisplay" class="timer-badge">Expiring in 30s</div>
             </div>
@@ -341,19 +285,20 @@
         <!-- Receive File Card -->
         <div class="card">
             <div class="card-title">
-                <i class="fa-solid fa-download" style="color: var(--primary);"></i> Download File
+                <i class="fa-solid fa-download" style="color: var(--primary);"></i> Download Files
             </div>
-            <p class="card-desc">Enter the 6-digit PIN to download shared content.</p>
+            <p class="card-desc">Enter the 6-digit PIN to download shared files.</p>
 
             <div class="pin-input-group">
                 <input type="text" id="pinInput" placeholder="ENTER 6-DIGIT PIN" maxlength="6" autocomplete="off">
             </div>
 
             <button class="btn" style="background: linear-gradient(135deg, #06b6d4, #0284c7);" onclick="downloadFile()">
-                <i class="fa-solid fa-circle-down"></i> Retrieve File
+                <i class="fa-solid fa-circle-down"></i> Retrieve Files
             </button>
-        </div>
 
+            <div id="downloadError" class="error-banner"></div>
+        </div>
     </div>
 
     <!-- Feedback Section -->
@@ -362,68 +307,71 @@
             <i class="fa-solid fa-comments" style="color: #c084fc;"></i> Send Us Your Feedback
         </div>
         <p class="card-desc">Have suggestions or facing issues? Let us know below.</p>
-        
         <form class="feedback-form" onsubmit="submitFeedback(event)">
             <input type="text" id="fbName" placeholder="Your Name" required>
             <input type="email" id="fbEmail" placeholder="Your Email" required>
-            <textarea id="fbMessage" placeholder="Type your feedback message here..." required></textarea>
+            <textarea id="fbMessage" placeholder="Type your message..." required></textarea>
             <button type="submit" class="btn" style="background: rgba(255,255,255,0.1); border: 1px solid var(--card-border);">
                 <i class="fa-solid fa-paper-plane"></i> Submit Feedback
             </button>
         </form>
     </div>
 
-    <!-- Social Footer -->
+    <!-- Footer -->
     <footer>
         <div class="social-links">
-            <a href="https://www.instagram.com/vikrm_bhardwaj?igsh=OWh4ZHprbW5rNTZv" target="_blank" class="social-icon insta" title="Instagram">
-                <i class="fa-brands fa-instagram"></i>
-            </a>
-            <a href="https://www.facebook.com/share/196jZuggxg/" target="_blank" class="social-icon fb" title="Facebook">
-                <i class="fa-brands fa-facebook-f"></i>
-            </a>
-            <a href="mailto:vikram.2872006@gmail.com" class="social-icon mail" title="Email Me">
-                <i class="fa-solid fa-envelope"></i>
-            </a>
+            <a href="https://www.instagram.com/vikrm_bhardwaj?igsh=OWh4ZHprbW5rNTZv" target="_blank" class="social-icon insta"><i class="fa-brands fa-instagram"></i></a>
+            <a href="https://www.facebook.com/share/196jZuggxg/" target="_blank" class="social-icon fb"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="mailto:vikram.2872006@gmail.com" class="social-icon mail"><i class="fa-solid fa-envelope"></i></a>
         </div>
-        <p class="copyright">Designed & Developed by <strong>Vikram Bhardwaj</strong> • Powered by Node.js & Render</p>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Designed & Developed by <strong>Vikram Bhardwaj</strong></p>
     </footer>
 
-    <!-- Logic Script -->
     <script>
+        let selectedFiles = [];
         let countdownInterval;
 
-        function updateFileName() {
-            const fileInput = document.getElementById('fileInput');
-            const fileLabel = document.getElementById('fileLabel');
-            if (fileInput.files.length > 0) {
-                fileLabel.innerHTML = `Selected: <strong style="color: #fff;">${fileInput.files[0].name}</strong>`;
+        function handleFileSelect(event) {
+            const files = Array.from(event.target.files);
+            selectedFiles = [...selectedFiles, ...files];
+            renderFileList();
+            event.target.value = ''; 
+        }
+
+        function renderFileList() {
+            const listContainer = document.getElementById('fileList');
+            const addMoreBtn = document.getElementById('addMoreBtn');
+            listContainer.innerHTML = '';
+
+            if (selectedFiles.length > 0) {
+                addMoreBtn.style.display = 'flex';
+                selectedFiles.forEach((file, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'file-item';
+                    item.innerHTML = `
+                        <span><i class="fa-regular fa-file"></i> ${file.name}</span>
+                        <i class="fa-solid fa-xmark remove-btn" onclick="removeFile(${index})"></i>
+                    `;
+                    listContainer.appendChild(item);
+                });
+            } else {
+                addMoreBtn.style.display = 'none';
             }
         }
 
-        // Drag & Drop handlers
-        const dropZone = document.getElementById('dropZone');
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-        });
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
-        });
-        dropZone.addEventListener('drop', (e) => {
-            const dt = e.dataTransfer;
-            document.getElementById('fileInput').files = dt.files;
-            updateFileName();
-        });
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            renderFileList();
+        }
 
-        async function uploadFile() {
-            const fileInput = document.getElementById('fileInput');
-            if (!fileInput.files.length) {
-                alert('Please choose a file to upload first.');
+        async function uploadFiles() {
+            if (selectedFiles.length === 0) {
+                alert('Please select at least one file to upload.');
                 return;
             }
 
             const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
+            selectedFiles.forEach(file => formData.append('files', file));
 
             try {
                 const response = await fetch('/upload', { method: 'POST', body: formData });
@@ -431,6 +379,8 @@
 
                 if (data.success) {
                     startCountdown(data.pin, data.expiresInSeconds);
+                    selectedFiles = [];
+                    renderFileList();
                 } else {
                     alert(data.message || 'Upload failed.');
                 }
@@ -464,19 +414,56 @@
             }, 1000);
         }
 
-        function downloadFile() {
+        // Same-Page Retrieve File (Prevents raw JSON page navigation)
+        async function downloadFile() {
             const pin = document.getElementById('pinInput').value.trim();
+            const errorBanner = document.getElementById('downloadError');
+            errorBanner.style.display = 'none';
+
             if (pin.length !== 6 || isNaN(pin)) {
-                alert('Please enter a valid 6-digit numerical PIN.');
+                errorBanner.innerText = '⚠️ Please enter a valid 6-digit PIN.';
+                errorBanner.style.display = 'block';
                 return;
             }
-            window.location.href = `/download/${pin}`;
+
+            try {
+                const response = await fetch(`/download/${pin}`);
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    errorBanner.innerText = `⚠️ ${errorData.message || 'Invalid or Expired PIN.'}`;
+                    errorBanner.style.display = 'block';
+                    return;
+                }
+
+                // File download trigger without leaving page
+                const blob = await response.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                
+                // Content-Disposition header se filename extract karein
+                const disposition = response.headers.get('content-disposition');
+                let filename = 'AirShare-Download';
+                if (disposition && disposition.includes('filename=')) {
+                    filename = disposition.split('filename=')[1].replace(/"/g, '');
+                }
+
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(downloadUrl);
+
+            } catch (err) {
+                errorBanner.innerText = '⚠️ Connection error or file not found.';
+                errorBanner.style.display = 'block';
+            }
         }
 
         function submitFeedback(e) {
             e.preventDefault();
-            const name = document.getElementById('fbName').value;
-            alert(`Thank you ${name}! Your feedback has been received.`);
+            alert(`Thank you ${document.getElementById('fbName').value}! Feedback submitted successfully.`);
             e.target.reset();
         }
     </script>
