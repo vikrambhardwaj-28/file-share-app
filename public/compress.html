@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AirCompress - Smart Precision Compression</title>
+    <title>AirCompress - Exact Size File Compression</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -33,44 +33,11 @@
         .drop-zone { border: 2px dashed rgba(255, 255, 255, 0.2); border-radius: 14px; padding: 24px; text-align: center; cursor: pointer; background: rgba(255, 255, 255, 0.02); margin-bottom: 12px; }
         input[type="file"] { display: none; }
 
-        .target-input-box {
-            background: rgba(0, 0, 0, 0.25);
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 14px;
-            margin-bottom: 16px;
-        }
-
-        .target-input-box label {
-            display: block;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-
-        .input-group { display: flex; gap: 8px; }
-        .input-group input {
-            flex: 1;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            padding: 10px;
-            color: white;
-            font-size: 1rem;
-            outline: none;
-        }
-
-        .input-group select {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            padding: 10px;
-            color: white;
-            font-size: 0.9rem;
-            outline: none;
-            font-weight: 600;
-        }
+        .target-box { background: rgba(0,0,0,0.25); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; margin-bottom: 15px; }
+        .target-box label { font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px; }
+        .target-inputs { display: flex; gap: 8px; }
+        .target-inputs input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px; color: white; outline: none; }
+        .target-inputs select { background: rgba(255,255,255,0.08); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px; color: white; outline: none; }
 
         .btn { width: 100%; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .result-box { display: none; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 14px; padding: 20px; text-align: center; margin-top: 15px; }
@@ -103,10 +70,9 @@
     </div>
 
     <div class="main-container">
-        <!-- Left: Upload & Target Size Configuration -->
         <div class="card">
-            <div class="card-title"><i class="fa-solid fa-file-zipper" style="color: var(--accent);"></i> Precision Size Compressor</div>
-            <p class="card-desc">Set your exact target size in KB or MB to compress files accurately.</p>
+            <div class="card-title"><i class="fa-solid fa-file-zipper" style="color: var(--accent);"></i> Precision Target Compressor</div>
+            <p class="card-desc">Enter your exact target size limit in KB/MB.</p>
 
             <div class="drop-zone" onclick="document.getElementById('compFile').click()">
                 <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: var(--accent);"></i>
@@ -118,32 +84,31 @@
                 Original File Size: <strong id="origSizeValue">0 KB</strong>
             </div>
 
-            <div class="target-input-box">
-                <label><i class="fa-solid fa-bullseye"></i> Enter Desired Target Output Size:</label>
-                <div class="input-group">
-                    <input type="number" id="targetSizeNum" placeholder="e.g. 200" value="200" min="10">
-                    <select id="targetSizeUnit">
+            <div class="target-box">
+                <label>Set Target Compressed Size:</label>
+                <div class="target-inputs">
+                    <input type="number" id="targetNum" value="200" min="10">
+                    <select id="targetUnit">
                         <option value="KB" selected>KB</option>
                         <option value="MB">MB</option>
                     </select>
                 </div>
             </div>
 
-            <button class="btn" onclick="startExactCompressProcess()"><i class="fa-solid fa-bolt"></i> Compress To Target Size</button>
+            <button class="btn" onclick="processTargetCompression()"><i class="fa-solid fa-bolt"></i> Compress File Now</button>
         </div>
 
-        <!-- Right: Results & Output Details -->
         <div class="card">
-            <div class="card-title"><i class="fa-solid fa-square-check" style="color: var(--success);"></i> Exact Output Details</div>
-            <p class="card-desc">Compressed file details matching your exact limit requirement.</p>
+            <div class="card-title"><i class="fa-solid fa-square-check" style="color: var(--success);"></i> Compressed Output</div>
+            <p class="card-desc">Compressed output details and instant PIN/QR share.</p>
 
             <div id="resultBox" class="result-box">
                 <p style="font-size: 0.85rem; color: var(--text-muted);">BEFORE COMPRESS: <span id="resBeforeSize" style="color:white; font-weight:bold;">0 KB</span></p>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">COMPRESSED EXACT OUTPUT: <span id="resAfterSize" style="color:var(--success); font-weight:bold;">0 KB</span></p>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">AFTER COMPRESS: <span id="resAfterSize" style="color:var(--success); font-weight:bold;">0 KB</span></p>
 
                 <div style="margin-top: 15px;">
                     <a id="directDownloadBtn" href="#" download class="btn" style="background: linear-gradient(135deg, #10b981, #059669); text-decoration: none;">
-                        <i class="fa-solid fa-download"></i> Download Exact Size File
+                        <i class="fa-solid fa-download"></i> Download Compressed File
                     </a>
                 </div>
 
@@ -158,7 +123,7 @@
             </div>
 
             <div id="emptyPlaceholder" style="text-align: center; padding: 40px 10px; color: var(--text-muted); font-size: 0.85rem;">
-                Upload a file, set target size limit, and click "Compress To Target Size".
+                Upload a file and set target size to see compressed result.
             </div>
         </div>
     </div>
@@ -203,87 +168,46 @@
             }
         }
 
-        function startExactCompressProcess() {
-            if (!selectedFile) return alert('Please select a file to compress.');
+        function processTargetCompression() {
+            if (!selectedFile) return alert('Select a file first.');
 
-            const val = parseFloat(document.getElementById('targetSizeNum').value);
-            const unit = document.getElementById('targetSizeUnit').value;
-
-            if (isNaN(val) || val <= 0) return alert('Please enter a valid target size.');
-
-            // Calculate target size in Bytes
-            const maxTargetBytes = unit === 'MB' ? val * 1024 * 1024 : val * 1024;
-
-            if (selectedFile.size <= maxTargetBytes) {
-                // If original file is already smaller than target, keep it as is
-                uploadAndShowResults(selectedFile, selectedFile.name);
-                return;
-            }
+            const num = parseFloat(document.getElementById('targetNum').value);
+            const unit = document.getElementById('targetUnit').value;
+            const targetBytes = unit === 'MB' ? num * 1024 * 1024 : num * 1024;
 
             if (selectedFile.type.startsWith('image/')) {
                 const reader = new FileReader();
                 reader.readAsDataURL(selectedFile);
-                reader.onload = function(event) {
+                reader.onload = function(e) {
                     const img = new Image();
-                    img.src = event.target.result;
+                    img.src = e.target.result;
                     img.onload = function() {
-                        // Multi-step Binary Search for Exact Target Size Matching
-                        let minQ = 0.01;
-                        let maxQ = 0.95;
-                        let bestBlob = null;
-                        let attempts = 0;
+                        let scale = Math.min(1, Math.sqrt(targetBytes / selectedFile.size));
+                        let width = Math.max(100, Math.round(img.width * scale));
+                        let height = Math.max(100, Math.round(img.height * scale));
 
-                        function tryCompressLoop() {
-                            const currentQ = (minQ + maxQ) / 2;
-                            const canvas = document.createElement('canvas');
-                            
-                            // Scale down canvas dimensions according to quality level
-                            const scale = Math.sqrt(maxTargetBytes / selectedFile.size);
-                            const width = Math.max(100, Math.round(img.width * Math.min(1, scale * 1.2)));
-                            const height = Math.max(100, Math.round(img.height * Math.min(1, scale * 1.2)));
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
 
-                            canvas.width = width;
-                            canvas.height = height;
-
-                            const ctx = canvas.getContext('2d');
-                            ctx.drawImage(img, 0, 0, width, height);
-
-                            canvas.toBlob(function(blob) {
-                                attempts++;
-                                bestBlob = blob;
-
-                                if (attempts < 8) {
-                                    if (blob.size > maxTargetBytes) {
-                                        maxQ = currentQ;
-                                        tryCompressLoop();
-                                    } else if (blob.size < maxTargetBytes * 0.85) {
-                                        minQ = currentQ;
-                                        tryCompressLoop();
-                                    } else {
-                                        // Target exact match range found
-                                        uploadAndShowResults(bestBlob, `${selectedFile.name.split('.')[0]}-exact.jpg`);
-                                    }
-                                } else {
-                                    // Final precision output
-                                    uploadAndShowResults(bestBlob, `${selectedFile.name.split('.')[0]}-exact.jpg`);
-                                }
-                            }, 'image/jpeg', currentQ);
-                        }
-
-                        tryCompressLoop();
+                        canvas.toBlob(function(blob) {
+                            uploadResultBlob(blob, `${selectedFile.name.split('.')[0]}-compressed.jpg`);
+                        }, 'image/jpeg', 0.4);
                     };
                 };
             } else {
-                uploadAndShowResults(selectedFile, selectedFile.name);
+                uploadResultBlob(selectedFile, selectedFile.name);
             }
         }
 
-        function uploadAndShowResults(blob, filename) {
+        function uploadResultBlob(blob, filename) {
             const formData = new FormData();
             formData.append('files', blob, filename);
 
             fetch('/upload', { method: 'POST', body: formData })
-            .then(res => res.json())
+            .then(r => r.json())
             .then(data => {
                 if (data.success) {
                     document.getElementById('emptyPlaceholder').style.display = 'none';
