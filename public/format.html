@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AirFormat - Convert File Formats</title>
+    <title>AirFormat - Intelligent File Converter</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -16,7 +16,7 @@
             --primary: #4f46e5; --primary-hover: #4338ca; --accent: #06b6d4;
             --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
             --card-bg: rgba(15, 23, 42, 0.65); --card-border: rgba(255, 255, 255, 0.12);
-            --text-main: #f8fafc; --text-muted: #94a3b8; --danger: #ef4444; --success: #10b981;
+            --text-main: #f8fafc; --text-muted: #94a3b8; --danger: #ef4444; --success: #10b981; --warning: #f59e0b;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
         body { background: var(--bg-gradient); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 20px 15px; }
@@ -27,7 +27,7 @@
         .nav-tab { flex: 1; text-align: center; padding: 12px 16px; border-radius: 12px; color: var(--text-muted); text-decoration: none; font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .nav-tab.active { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; box-shadow: 0 4px 15px rgba(79, 70, 229, 0.35); }
 
-        .main-container { width: 100%; max-width: 900px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 40px; }
+        .main-container { width: 100%; max-width: 900px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 24px; }
         .card { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--card-border); border-radius: 20px; padding: 30px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); }
         .card-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
         .card-desc { font-size: 0.875rem; color: var(--text-muted); margin-bottom: 20px; }
@@ -39,10 +39,21 @@
         .format-select-box select { width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border); color: white; padding: 10px; border-radius: 6px; outline: none; font-weight: 600; }
         .format-select-box select option { background: #0f172a; color: white; }
 
+        .warning-banner { display: none; background: rgba(245, 158, 11, 0.15); border: 1px solid var(--warning); color: #fcd34d; padding: 12px; border-radius: 10px; font-size: 0.85rem; margin-bottom: 15px; text-align: center; }
+
         .btn { width: 100%; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .result-box { display: none; background: rgba(192, 132, 252, 0.08); border: 1px solid rgba(192, 132, 252, 0.3); border-radius: 14px; padding: 20px; text-align: center; margin-top: 15px; }
         .pin-code { font-size: 2rem; font-weight: 800; letter-spacing: 6px; color: var(--success); margin: 6px 0; }
         .timer-badge { font-size: 0.85rem; font-weight: 700; color: var(--danger); background: rgba(239, 68, 68, 0.15); padding: 6px 14px; border-radius: 20px; display: inline-block; }
+
+        /* Disclaimer Box */
+        .disclaimer-section { width: 100%; max-width: 900px; background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); border-radius: 16px; padding: 20px 25px; margin-bottom: 30px; }
+        .disclaimer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 12px; }
+        @media (max-width: 600px) { .disclaimer-grid { grid-template-columns: 1fr; } }
+        .disclaimer-item h4 { font-size: 0.9rem; color: var(--accent); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+        .disclaimer-item ul { list-style: none; font-size: 0.8rem; color: var(--text-muted); }
+        .disclaimer-item ul li { margin-bottom: 4px; position: relative; padding-left: 12px; }
+        .disclaimer-item ul li::before { content: "•"; position: absolute; left: 0; color: var(--primary); }
 
         .feedback-section { width: 100%; max-width: 900px; background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--card-border); border-radius: 20px; padding: 25px 30px; margin-bottom: 40px; }
         .feedback-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
@@ -70,9 +81,10 @@
     </div>
 
     <div class="main-container">
+        <!-- Input Card -->
         <div class="card">
             <div class="card-title"><i class="fa-solid fa-file-code" style="color: #c084fc;"></i> Format Converter</div>
-            <p class="card-desc">Select target format extension.</p>
+            <p class="card-desc">Select target format extension for valid conversion.</p>
 
             <div class="drop-zone" onclick="document.getElementById('fmtFile').click()">
                 <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: #c084fc;"></i>
@@ -87,16 +99,26 @@
             <div class="format-select-box">
                 <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px;">Convert To Target Format:</label>
                 <select id="targetFormatSelect">
-                    <option value="pdf">PDF Document (.pdf)</option>
-                    <option value="jpg">JPG Image (.jpg)</option>
-                    <option value="png">PNG Image (.png)</option>
-                    <option value="webp">WEBP Image (.webp)</option>
+                    <optgroup label="Document & Text Formats">
+                        <option value="pdf">PDF Document (.pdf)</option>
+                        <option value="docx">Word Document (.docx)</option>
+                        <option value="txt">Plain Text (.txt)</option>
+                        <option value="xlsx">Excel Spreadsheet (.xlsx)</option>
+                    </optgroup>
+                    <optgroup label="Image Formats">
+                        <option value="png">PNG Image (.png)</option>
+                        <option value="jpg">JPG Image (.jpg)</option>
+                        <option value="webp">WEBP Image (.webp)</option>
+                    </optgroup>
                 </select>
             </div>
+
+            <div id="warnBanner" class="warning-banner"></div>
 
             <button class="btn" style="background: linear-gradient(135deg, #c084fc, #9333ea);" onclick="processFormatConversion()"><i class="fa-solid fa-rotate"></i> Convert Format Now</button>
         </div>
 
+        <!-- Result Card -->
         <div class="card">
             <div class="card-title"><i class="fa-solid fa-circle-check" style="color: var(--success);"></i> Converted Output</div>
             <p class="card-desc">Download converted file directly or share via PIN/QR.</p>
@@ -121,11 +143,39 @@
             </div>
 
             <div id="emptyPlaceholder" style="text-align: center; padding: 40px 10px; color: var(--text-muted); font-size: 0.85rem;">
-                Upload a file, choose a format, and click "Convert Format Now".
+                Upload a file, choose a valid format, and click "Convert Format Now".
             </div>
         </div>
     </div>
 
+    <!-- Supported Conversion Guide & Disclaimer Box -->
+    <div class="disclaimer-section">
+        <div style="font-weight: 700; font-size: 0.95rem; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-triangle-exclamation" style="color: var(--warning);"></i> Supported Conversions & Disclaimer Notice
+        </div>
+        <div class="disclaimer-grid">
+            <div class="disclaimer-item">
+                <h4><i class="fa-solid fa-file-lines"></i> Document & Text Conversions</h4>
+                <ul>
+                    <li><strong>ODT / DOCX to PDF:</strong> Lock layout into printable PDF document.</li>
+                    <li><strong>PDF to DOCX:</strong> Extract fixed layout into editable text.</li>
+                    <li><strong>TXT to PDF / DOCX:</strong> Format plain text into styled documents.</li>
+                    <li><strong>CSV to XLSX:</strong> Convert raw comma-separated data to Excel sheet.</li>
+                </ul>
+            </div>
+            <div class="disclaimer-item">
+                <h4><i class="fa-solid fa-image"></i> Image Conversions</h4>
+                <ul>
+                    <li><strong>JPG to PNG:</strong> Add transparency support to photos.</li>
+                    <li><strong>PNG to JPG:</strong> Reduce image file size by removing opacity layer.</li>
+                    <li><strong>HEIC / WEBP to JPG:</strong> Convert iPhone & web formats to universal photos.</li>
+                    <li><strong>SVG to PNG:</strong> Render scalable vector graphics to raster pixels.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Section -->
     <div class="feedback-section">
         <div class="card-title"><i class="fa-solid fa-comments" style="color: #c084fc;"></i> Send Us Your Feedback</div>
         <p class="card-desc">Have suggestions or facing issues? Let us know below.</p>
@@ -151,6 +201,7 @@
         let countdownInterval;
 
         function handleFormatSelect(e) {
+            document.getElementById('warnBanner').style.display = 'none';
             if (e.target.files.length > 0) {
                 selectedFile = e.target.files[0];
                 document.getElementById('selectedFileInfo').style.display = 'block';
@@ -158,32 +209,67 @@
             }
         }
 
+        // Format Compatibility Matrix
+        function isValidConversion(srcExt, targetFmt) {
+            srcExt = srcExt.toLowerCase().replace('.', '');
+            targetFmt = targetFmt.toLowerCase();
+
+            if (srcExt === targetFmt) return true;
+
+            const docFormats = ['pdf', 'docx', 'doc', 'txt', 'odt', 'csv', 'xlsx'];
+            const imgFormats = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'svg'];
+
+            // Images to Document (PDF) is allowed
+            if (imgFormats.includes(srcExt) && targetFmt === 'pdf') return true;
+
+            // Cross category check (Image <-> Spreadsheet or Document <-> Image except PDF)
+            if (imgFormats.includes(srcExt) && !imgFormats.includes(targetFmt) && targetFmt !== 'pdf') return false;
+            if (docFormats.includes(srcExt) && imgFormats.includes(targetFmt)) return false;
+
+            return true;
+        }
+
         async function processFormatConversion() {
+            const warnBanner = document.getElementById('warnBanner');
+            warnBanner.style.display = 'none';
+
             if (!selectedFile) return alert('Select a file first.');
 
             const targetFmt = document.getElementById('targetFormatSelect').value;
+            const srcExt = selectedFile.name.split('.').pop();
+
+            // Validate Conversion Compatibility
+            if (!isValidConversion(srcExt, targetFmt)) {
+                warnBanner.innerText = `⚠️ Invalid Conversion! Cannot convert .${srcExt.toUpperCase()} file to .${targetFmt.toUpperCase()}. Please check the supported conversions guide below.`;
+                warnBanner.style.display = 'block';
+                return;
+            }
+
             const baseName = selectedFile.name.split('.')[0];
             const outName = `${baseName}.${targetFmt}`;
 
             if (targetFmt === 'pdf') {
-                // PDF Binary Generator using PDF-Lib
                 const pdfDoc = await PDFLib.PDFDocument.create();
                 const reader = new FileReader();
                 reader.readAsArrayBuffer(selectedFile);
                 reader.onload = async function() {
-                    const bytes = new Uint8Array(reader.result);
-                    let img;
-                    if (selectedFile.type === 'image/png') img = await pdfDoc.embedPng(bytes);
-                    else img = await pdfDoc.embedJpg(bytes);
+                    try {
+                        const bytes = new Uint8Array(reader.result);
+                        let img;
+                        if (selectedFile.type === 'image/png') img = await pdfDoc.embedPng(bytes);
+                        else img = await pdfDoc.embedJpg(bytes);
 
-                    const page = pdfDoc.addPage([img.width, img.height]);
-                    page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
-                    const pdfBytes = await pdfDoc.save();
-                    const outBlob = new Blob([pdfBytes], { type: 'application/pdf' });
-                    uploadResultBlob(outBlob, outName, targetFmt);
+                        const page = pdfDoc.addPage([img.width, img.height]);
+                        page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+                        const pdfBytes = await pdfDoc.save();
+                        const outBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+                        uploadResultBlob(outBlob, outName, targetFmt);
+                    } catch (err) {
+                        warnBanner.innerText = `⚠️ Conversion failed for .${srcExt} to PDF. Ensure valid image source.`;
+                        warnBanner.style.display = 'block';
+                    }
                 };
             } else {
-                // Image Canvas Re-encoder
                 const img = new Image();
                 img.src = URL.createObjectURL(selectedFile);
                 img.onload = function() {
