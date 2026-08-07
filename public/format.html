@@ -3,503 +3,230 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AirFormat - Cloud Format Converter</title>
-
-    <!-- Custom Favicon -->
+    <title>AirFormat - Universal File Converter</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
-
-    <!-- Google Fonts & FontAwesome Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
         :root {
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --accent: #06b6d4;
-            --purple-accent: #c084fc;
+            --primary: #4f46e5; --primary-hover: #4338ca; --accent: #06b6d4;
             --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
-            --card-bg: rgba(15, 23, 42, 0.65);
-            --card-border: rgba(255, 255, 255, 0.12);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --danger: #ef4444;
-            --success: #10b981;
+            --card-bg: rgba(15, 23, 42, 0.65); --card-border: rgba(255, 255, 255, 0.12);
+            --text-main: #f8fafc; --text-muted: #94a3b8; --danger: #ef4444; --success: #10b981; --warning: #f59e0b;
         }
-
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: var(--bg-gradient); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 20px 15px; }
+        .navbar { width: 100%; max-width: 900px; display: flex; justify-content: space-between; align-items: center; padding: 15px 0; margin-bottom: 10px; }
+        .brand { font-size: 1.5rem; font-weight: 800; background: linear-gradient(to right, #818cf8, #c084fc); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-        body {
-            background: var(--bg-gradient);
-            color: var(--text-main);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            padding: 20px 15px;
-        }
+        .wide-nav-bar { width: 100%; max-width: 900px; background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--card-border); border-radius: 16px; padding: 8px; display: flex; gap: 10px; margin-bottom: 24px; }
+        .nav-tab { flex: 1; text-align: center; padding: 12px 16px; border-radius: 12px; color: var(--text-muted); text-decoration: none; font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .nav-tab.active { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; box-shadow: 0 4px 15px rgba(79, 70, 229, 0.35); }
 
-        .navbar {
-            width: 100%;
-            max-width: 900px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 0;
-            margin-bottom: 10px;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1.5rem;
-            font-weight: 800;
-            background: linear-gradient(to right, #818cf8, #c084fc);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        /* Wide Horizontal Nav Bar */
-        .wide-nav-bar {
-            width: 100%;
-            max-width: 900px;
-            background: var(--card-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--card-border);
-            border-radius: 16px;
-            padding: 8px;
-            display: flex;
-            gap: 10px;
-            margin-bottom: 24px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        .nav-tab {
-            flex: 1;
-            text-align: center;
-            padding: 12px 16px;
-            border-radius: 12px;
-            color: var(--text-muted);
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 0.95rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .nav-tab:hover:not(.active) {
-            background: rgba(255, 255, 255, 0.08);
-            color: var(--text-main);
-        }
-
-        .nav-tab.active {
-            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
-            color: white;
-            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.35);
-        }
-
-        .main-container {
-            width: 100%;
-            max-width: 900px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 24px;
-            margin-bottom: 40px;
-        }
-
-        .card {
-            background: var(--card-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--card-border);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .card:hover {
-            transform: translateY(-6px);
-            border-color: rgba(99, 102, 241, 0.4);
-            box-shadow: 0 25px 60px rgba(79, 70, 229, 0.25);
-        }
-
-        .card-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
+        .main-container { width: 100%; max-width: 900px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 24px; }
+        .card { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--card-border); border-radius: 20px; padding: 30px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); }
+        .card-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
         .card-desc { font-size: 0.875rem; color: var(--text-muted); margin-bottom: 20px; }
 
-        .drop-zone {
-            border: 2px dashed rgba(255, 255, 255, 0.2);
-            border-radius: 14px;
-            padding: 24px;
-            text-align: center;
-            cursor: pointer;
-            background: rgba(255, 255, 255, 0.02);
-            margin-bottom: 12px;
-            transition: all 0.3s ease;
-        }
-
-        .drop-zone:hover { border-color: var(--primary); background: rgba(79, 70, 229, 0.08); }
-
-        .file-status-tag {
-            font-size: 0.85rem;
-            color: var(--accent);
-            margin-bottom: 16px;
-            font-weight: 600;
-            word-break: break-all;
-        }
-
-        label {
-            display: block;
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-
-        select {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 14px;
-            color: var(--text-main);
-            font-size: 0.95rem;
-            outline: none;
-            margin-bottom: 20px;
-            cursor: pointer;
-        }
-
-        select option {
-            background: #0f172a;
-            color: white;
-        }
-
+        .drop-zone { border: 2px dashed rgba(255, 255, 255, 0.2); border-radius: 14px; padding: 24px; text-align: center; cursor: pointer; background: rgba(255, 255, 255, 0.02); margin-bottom: 12px; }
         input[type="file"] { display: none; }
 
-        .btn {
-            width: 100%;
-            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
-            color: white;
-            border: none;
-            padding: 14px;
-            border-radius: 12px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-        }
+        .format-select-box { background: rgba(0, 0, 0, 0.2); border: 1px solid var(--card-border); padding: 12px; border-radius: 10px; margin-bottom: 15px; }
+        .format-select-box select { width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border); color: white; padding: 10px; border-radius: 6px; outline: none; font-weight: 600; }
+        .format-select-box select option { background: #0f172a; color: white; }
 
-        .btn:hover { opacity: 0.95; transform: scale(0.99); }
+        .btn { width: 100%; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .result-box { display: none; background: rgba(192, 132, 252, 0.08); border: 1px solid rgba(192, 132, 252, 0.3); border-radius: 14px; padding: 20px; text-align: center; margin-top: 15px; }
+        .pin-code { font-size: 2rem; font-weight: 800; letter-spacing: 6px; color: var(--success); margin: 6px 0; }
+        .timer-badge { font-size: 0.85rem; font-weight: 700; color: var(--danger); background: rgba(239, 68, 68, 0.15); padding: 6px 14px; border-radius: 20px; display: inline-block; }
 
-        /* Processing Spinner Animation */
-        .processing-box {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 30px 0;
-        }
+        .disclaimer-section { width: 100%; max-width: 900px; background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); border-radius: 16px; padding: 20px 25px; margin-bottom: 30px; }
+        .disclaimer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 12px; }
+        @media (max-width: 600px) { .disclaimer-grid { grid-template-columns: 1fr; } }
+        .disclaimer-item h4 { font-size: 0.9rem; color: var(--accent); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+        .disclaimer-item ul { list-style: none; font-size: 0.8rem; color: var(--text-muted); }
+        .disclaimer-item ul li { margin-bottom: 4px; position: relative; padding-left: 12px; }
+        .disclaimer-item ul li::before { content: "•"; position: absolute; left: 0; color: var(--primary); }
 
-        .spinner {
-            width: 48px;
-            height: 48px;
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            border-left-color: var(--purple-accent);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Result Panel */
-        .result-box {
-            display: none;
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            border-radius: 14px;
-            padding: 20px;
-            text-align: center;
-            margin-top: 10px;
-        }
-
-        .pin-code { font-size: 2.2rem; font-weight: 800; letter-spacing: 8px; color: var(--success); margin: 8px 0; }
-
-        .btn-dl {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--success);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 10px;
-            text-decoration: none;
-            font-weight: 700;
-            margin-top: 12px;
-        }
-
-        .feedback-section {
-            width: 100%;
-            max-width: 900px;
-            background: var(--card-bg);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--card-border);
-            border-radius: 20px;
-            padding: 25px 30px;
-            margin-bottom: 40px;
-        }
-
-        .feedback-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
-        @media (max-width: 600px) { .feedback-form { grid-template-columns: 1fr; } }
-        .feedback-form input, .feedback-form textarea { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px; color: white; outline: none; }
-        .feedback-form textarea { grid-column: 1 / -1; resize: none; height: 80px; }
-        .feedback-form button { grid-column: 1 / -1; }
-
-        footer {
-            width: 100%;
-            max-width: 900px;
-            border-top: 1px solid var(--card-border);
-            padding-top: 25px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            text-align: center;
-        }
-
+        footer { width: 100%; max-width: 900px; border-top: 1px solid var(--card-border); padding-top: 25px; display: flex; flex-direction: column; align-items: center; gap: 15px; text-align: center; }
         .social-links { display: flex; gap: 20px; }
-        .social-icon {
-            width: 44px; height: 44px; border-radius: 50%;
-            background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border);
-            display: flex; align-items: center; justify-content: center;
-            color: var(--text-main); font-size: 1.2rem; text-decoration: none;
-        }
-        .social-icon.insta:hover { background: #e1306c; }
-        .social-icon.fb:hover { background: #1877f2; }
-        .social-icon.mail:hover { background: #ea4335; }
+        .social-icon { width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border); display: flex; align-items: center; justify-content: center; color: var(--text-main); font-size: 1.2rem; text-decoration: none; }
     </style>
 </head>
 <body>
 
     <nav class="navbar">
-        <div class="brand">
-            <i class="fa-solid fa-bolt" style="color: var(--accent);"></i> AirShare
-        </div>
+        <div class="brand"><i class="fa-solid fa-bolt" style="color: var(--accent);"></i> AirShare</div>
         <span style="font-size: 0.85rem; color: var(--text-muted);"><i class="fa-solid fa-shield-halved"></i> Encrypted Transfer</span>
     </nav>
 
-    <!-- Wide Horizontal Nav Bar -->
     <div class="wide-nav-bar">
-        <a href="index.html" class="nav-tab">
-            <i class="fa-solid fa-share-nodes"></i> AirShare
-        </a>
-        <a href="compress.html" class="nav-tab">
-            <i class="fa-solid fa-file-zipper"></i> AirCompress
-        </a>
-        <a href="format.html" class="nav-tab active">
-            <i class="fa-solid fa-file-code"></i> AirFormat
-        </a>
+        <a href="index.html" class="nav-tab"><i class="fa-solid fa-share-nodes"></i> AirShare</a>
+        <a href="compress.html" class="nav-tab"><i class="fa-solid fa-file-zipper"></i> AirCompress</a>
+        <a href="format.html" class="nav-tab active"><i class="fa-solid fa-file-code"></i> AirFormat</a>
     </div>
 
     <div class="main-container">
-        <!-- Input Options Card -->
         <div class="card">
-            <div>
-                <div class="card-title">
-                    <i class="fa-solid fa-file-code" style="color: var(--purple-accent);"></i> Format Converter
-                </div>
-                <p class="card-desc">Select target format extension for high-precision conversion.</p>
+            <div class="card-title"><i class="fa-solid fa-file-code" style="color: #c084fc;"></i> Format Converter</div>
+            <p class="card-desc">Select target format extension for high-precision conversion.</p>
 
-                <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
-                    <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: var(--purple-accent);"></i>
-                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">Click or Drag file to convert</p>
-                </div>
-                <input type="file" id="fileInput" onchange="updateSelectedFile(this.files)">
+            <div class="drop-zone" onclick="document.getElementById('fmtFile').click()">
+                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: #c084fc;"></i>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">Click or Drag file to convert</p>
+            </div>
+            <input type="file" id="fmtFile" onchange="handleFormatSelect(event)">
 
-                <div class="file-status-tag" id="selectedFileText">Selected File: None</div>
+            <div id="selectedFileInfo" style="display:none; font-size: 0.85rem; margin-bottom: 12px; color: var(--accent);">
+                Selected File: <strong id="fmtFileName">none</strong>
+            </div>
 
-                <label for="targetFormat">Convert To Target Format:</label>
-                <select id="targetFormat">
-                    <option value="pdf">PDF Document (.pdf)</option>
-                    <option value="docx">Word Document (.docx)</option>
-                    <option value="pptx">PowerPoint (.pptx)</option>
-                    <option value="xlsx">Excel Sheet (.xlsx)</option>
-                    <option value="odt">OpenOffice Doc (.odt)</option>
-                    <option value="txt">Text File (.txt)</option>
-                    <option value="csv">CSV Sheet (.csv)</option>
-                    <option value="jpg">JPEG Image (.jpg)</option>
-                    <option value="png">PNG Image (.png)</option>
-                    <option value="webp">WebP Image (.webp)</option>
+            <div class="format-select-box">
+                <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px;">Convert To Target Format:</label>
+                <select id="targetFormatSelect">
+                    <optgroup label="Document & Presentation Formats">
+                        <option value="pdf">PDF Document (.pdf)</option>
+                        <option value="docx">Word Document (.docx)</option>
+                        <option value="doc">Legacy Word (.doc)</option>
+                        <option value="pptx">PowerPoint Presentation (.pptx)</option>
+                        <option value="ppt">Legacy PowerPoint (.ppt)</option>
+                        <option value="odt">OpenOffice Doc (.odt)</option>
+                        <option value="txt">Plain Text (.txt)</option>
+                        <option value="xlsx">Excel Sheet (.xlsx)</option>
+                        <option value="csv">CSV Data (.csv)</option>
+                    </optgroup>
+                    <optgroup label="Image Formats">
+                        <option value="jpeg">JPEG Image (.jpeg)</option>
+                        <option value="jpg">JPG Image (.jpg)</option>
+                        <option value="png">PNG Image (.png)</option>
+                        <option value="webp">WEBP Image (.webp)</option>
+                        <option value="heic">iPhone Photo (.heic)</option>
+                        <option value="svg">Vector Image (.svg)</option>
+                    </optgroup>
                 </select>
             </div>
 
-            <button class="btn" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);" onclick="startConversion()">
-                <i class="fa-solid fa-rotate"></i> Convert Format Now
-            </button>
+            <button class="btn" style="background: linear-gradient(135deg, #c084fc, #9333ea);" onclick="startCloudConversion()"><i class="fa-solid fa-rotate"></i> Convert Format Now</button>
         </div>
 
-        <!-- Output Status Card -->
-        <div class="card" style="text-align: center; justify-content: center;">
-            <div id="defaultMsg">
-                <i class="fa-solid fa-circle-check" style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 12px;"></i>
-                <div class="card-title" style="justify-content: center;">Converted Output</div>
-                <p class="card-desc" style="margin-bottom: 0;">Upload a file, choose a target format, and click "Convert Format Now".</p>
+        <div class="card">
+            <div class="card-title"><i class="fa-solid fa-circle-check" style="color: var(--success);"></i> Converted Output</div>
+            <p class="card-desc">Download converted file directly or share via PIN/QR.</p>
+
+            <div id="resultBox" class="result-box">
+                <p style="font-size: 0.85rem; color: var(--text-muted);">TARGET FORMAT: <span id="resTargetFmt" style="color:white; font-weight:bold; text-transform:uppercase;">PDF</span></p>
+
+                <div style="margin-top: 15px;">
+                    <a id="directDownloadBtn" href="#" download class="btn" style="background: linear-gradient(135deg, #10b981, #059669); text-decoration: none;">
+                        <i class="fa-solid fa-download"></i> Download Converted File
+                    </a>
+                </div>
+
+                <div style="margin-top: 15px; border-top: 1px dashed var(--card-border); padding-top: 15px;">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">SHARE PIN</span>
+                    <div id="pinDisplay" class="pin-code">------</div>
+                    <div style="background:white; padding:10px; border-radius:10px; display:inline-block; margin:8px 0;">
+                        <div id="qrcode"></div>
+                    </div>
+                    <div><span id="timerDisplay" class="timer-badge">Expiring in 60s</span></div>
+                </div>
             </div>
 
-            <!-- Active Conversion Spinner Animation -->
-            <div class="processing-box" id="loader">
-                <div class="spinner"></div>
-                <p style="margin-top: 16px; font-weight: 600; color: var(--text-main);">Converting file... Please wait</p>
-                <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Large files may take a few seconds</span>
-            </div>
-
-            <!-- Result Box -->
-            <div class="result-box" id="resultBox">
-                <p style="font-size: 0.85rem; font-weight: 700; color: var(--success);"><i class="fa-solid fa-circle-check"></i> Conversion Completed!</p>
-                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">SECURITY PIN</span>
-                <div class="pin-code" id="resultPin">------</div>
-                <a href="#" id="downloadBtn" class="btn-dl" target="_blank">
-                    <i class="fa-solid fa-download"></i> Download Converted File
-                </a>
+            <div id="emptyPlaceholder" style="text-align: center; padding: 40px 10px; color: var(--text-muted); font-size: 0.85rem;">
+                Upload a file, choose a target format, and click "Convert Format Now".
             </div>
         </div>
     </div>
 
-    <!-- Feedback Section -->
-    <div class="feedback-section">
-        <div class="card-title">
-            <i class="fa-solid fa-comments" style="color: #c084fc;"></i> Send Us Your Feedback
+    <!-- Supported Conversion Matrix & Disclaimer Guide -->
+    <div class="disclaimer-section">
+        <div style="font-weight: 700; font-size: 0.95rem; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-circle-info" style="color: var(--accent);"></i> Supported Conversions Matrix
         </div>
-        <p class="card-desc">Have suggestions or facing issues? Let us know below.</p>
-        <form class="feedback-form" onsubmit="submitFeedback(event)">
-            <input type="text" id="fbName" placeholder="Your Name" required>
-            <input type="email" id="fbEmail" placeholder="Your Email" required>
-            <textarea id="fbMessage" placeholder="Type your message..." required></textarea>
-            <button type="submit" class="btn" style="background: rgba(255,255,255,0.1); border: 1px solid var(--card-border);">
-                <i class="fa-solid fa-paper-plane"></i> Submit Feedback
-            </button>
-        </form>
+        <div class="disclaimer-grid">
+            <div class="disclaimer-item">
+                <h4><i class="fa-solid fa-file-powerpoint"></i> Presentations & Docs</h4>
+                <ul>
+                    <li><strong>PPT / PPTX to PDF:</strong> Convert PowerPoint slides into printable PDFs.</li>
+                    <li><strong>PDF to PPTX:</strong> Extract PDF pages into presentation slides.</li>
+                    <li><strong>DOCX / ODT to PDF:</strong> Lock layout formatting cleanly.</li>
+                    <li><strong>PDF to DOCX / DOC:</strong> Turn PDFs into editable Word documents.</li>
+                </ul>
+            </div>
+            <div class="disclaimer-item">
+                <h4><i class="fa-solid fa-image"></i> Image & Media Formats</h4>
+                <ul>
+                    <li><strong>JPEG / JPG to PNG:</strong> Convert image extensions smoothly.</li>
+                    <li><strong>HEIC to JPEG:</strong> Make iPhone photos readable on Windows/Android.</li>
+                    <li><strong>SVG to PNG:</strong> Rasterize vector graphics into pixel images.</li>
+                    <li><strong>CSV to XLSX:</strong> Turn raw tables into Excel spreadsheets.</li>
+                </ul>
+            </div>
+        </div>
     </div>
 
-    <!-- Footer -->
     <footer>
         <div class="social-links">
-            <a href="https://www.instagram.com/vikrm_bhardwaj?igsh=OWh4ZHprbW5rNTZv" target="_blank" class="social-icon insta"><i class="fa-brands fa-instagram"></i></a>
-            <a href="https://www.facebook.com/share/196jZuggxg/" target="_blank" class="social-icon fb"><i class="fa-brands fa-facebook-f"></i></a>
-            <a href="mailto:vikram.2872006@gmail.com" class="social-icon mail"><i class="fa-solid fa-envelope"></i></a>
+            <a href="https://www.instagram.com/vikrm_bhardwaj?igsh=OWh4ZHprbW5rNTZv" target="_blank" class="social-icon"><i class="fa-brands fa-instagram"></i></a>
+            <a href="https://www.facebook.com/share/196jZuggxg/" target="_blank" class="social-icon"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="mailto:vikram.2872006@gmail.com" class="social-icon"><i class="fa-solid fa-envelope"></i></a>
         </div>
         <p style="font-size: 0.85rem; color: var(--text-muted);">Designed & Developed by <strong>Vikram Bhardwaj</strong></p>
     </footer>
 
     <script>
-        // Global Controller to handle process aborting on new conversion trigger
-        let currentConversionController = null;
+        let selectedFile = null;
+        let countdownInterval;
 
-        function updateSelectedFile(files) {
-            if (files && files[0]) {
-                document.getElementById('selectedFileText').innerText = `Selected File: ${files[0].name}`;
+        function handleFormatSelect(e) {
+            if (e.target.files.length > 0) {
+                selectedFile = e.target.files[0];
+                document.getElementById('selectedFileInfo').style.display = 'block';
+                document.getElementById('fmtFileName').innerText = selectedFile.name;
             }
         }
 
-        async function startConversion() {
-            const fileInput = document.getElementById('fileInput');
-            const targetFormat = document.getElementById('targetFormat').value;
+        function startCloudConversion() {
+            if (!selectedFile) return alert('Please select a file to convert.');
 
-            const defaultMsg = document.getElementById('defaultMsg');
-            const loader = document.getElementById('loader');
-            const resultBox = document.getElementById('resultBox');
-
-            if (!fileInput.files[0]) {
-                alert('Please select a file first.');
-                return;
-            }
-
-            // 1. CANCEL ONGOING PREVIOUS PROCESS IF ACTIVE
-            if (currentConversionController) {
-                currentConversionController.abort();
-                console.log('Previous ongoing conversion process aborted.');
-            }
-
-            // 2. CREATE NEW CONTROLLER FOR THIS CONVERSION
-            currentConversionController = new AbortController();
-            const { signal } = currentConversionController;
-
-            // 3. SHOW ANIMATION & HIDE PREVIOUS OUTPUTS
-            defaultMsg.style.display = 'none';
-            resultBox.style.display = 'none';
-            loader.style.display = 'flex';
-
+            const targetFmt = document.getElementById('targetFormatSelect').value;
             const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
-            formData.append('targetFormat', targetFormat);
+            formData.append('file', selectedFile);
+            formData.append('targetFormat', targetFmt);
 
-            try {
-                const response = await fetch('/convert-cloud', {
-                    method: 'POST',
-                    body: formData,
-                    signal: signal // Attach AbortController Signal
-                });
-
-                const data = await response.json();
-
-                // Hide Spinner
-                loader.style.display = 'none';
-
+            fetch('/convert-cloud', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
                 if (data.success) {
-                    resultBox.style.display = 'block';
-                    document.getElementById('resultPin').innerText = data.pin;
-                    document.getElementById('downloadBtn').href = `/download/${data.pin}/0`;
+                    document.getElementById('emptyPlaceholder').style.display = 'none';
+                    document.getElementById('resultBox').style.display = 'block';
+                    document.getElementById('resTargetFmt').innerText = targetFmt;
+
+                    const downloadUrl = `/download/${data.pin}/0`;
+                    const dBtn = document.getElementById('directDownloadBtn');
+                    dBtn.href = downloadUrl;
+                    
+                    const baseName = selectedFile.name.split('.')[0];
+                    dBtn.download = `${baseName}.${targetFmt}`;
+
+                    document.getElementById('pinDisplay').innerText = data.pin;
+                    document.getElementById('qrcode').innerHTML = '';
+                    new QRCode(document.getElementById('qrcode'), { text: `${window.location.origin}/index.html?pin=${data.pin}`, width: 110, height: 110 });
+
+                    let timeLeft = 60;
+                    clearInterval(countdownInterval);
+                    countdownInterval = setInterval(() => {
+                        timeLeft--;
+                        if (timeLeft > 0) document.getElementById('timerDisplay').innerText = `Expiring in ${timeLeft}s`;
+                        else { clearInterval(countdownInterval); document.getElementById('pinDisplay').innerText = '------'; document.getElementById('timerDisplay').innerText = '⚠️ PIN Expired!'; }
+                    }, 1000);
                 } else {
-                    defaultMsg.style.display = 'block';
-                    alert(`Conversion failed: ${data.message}`);
+                    alert(data.message || 'Conversion failed.');
                 }
-
-            } catch (err) {
-                // If cancelled by new conversion request
-                if (err.name === 'AbortError') {
-                    console.log('Fetch request cancelled due to new conversion trigger.');
-                    return;
-                }
-
-                loader.style.display = 'none';
-                defaultMsg.style.display = 'block';
-                alert('Connection error or server failed to process file.');
-                console.error(err);
-            } finally {
-                if (currentConversionController && currentConversionController.signal === signal) {
-                    currentConversionController = null;
-                }
-            }
-        }
-
-        function submitFeedback(e) {
-            e.preventDefault();
-            alert(`Thank you ${document.getElementById('fbName').value}! Feedback submitted successfully.`);
-            e.target.reset();
+            })
+            .catch(err => alert('Server connection error.'));
         }
     </script>
 </body>
