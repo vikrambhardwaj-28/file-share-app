@@ -4,7 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const sharp = require('sharp');
-const convertapi = require('convertapi')('secret_9b5e5894b9981a8b'); // Free API Secret Key
+const convertapi = require('convertapi')('GvANKlzuszBkIpK4l6bVIcx9qAKOtPkH'); // Free API Secret Key
 
 const app = express();
 const PORT = process.env.PORT || 3000;
