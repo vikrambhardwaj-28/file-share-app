@@ -50,15 +50,18 @@ app.post('/upload', upload.array('files', 10), (req, res) => {
     return res.json({ success: true, pin, fileCount: req.files.length, expiresInSeconds: 60 });
 });
 
-// 2. AirFormat Endpoint (Cleaned LibreOffice Target Format Handling)
+// 2. AirFormat Endpoint (Fixed Double-Dot Extension Bug)
 app.post('/convert-cloud', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded.' });
 
         const inputPath = req.file.path;
         const originalName = req.file.originalname;
-        const srcExt = path.extname(originalName).replace('.', '').toLowerCase();
+        const srcExt = path.extname(originalName).replace(/^\.+/, '').toLowerCase();
+        
         let rawTarget = (req.body.targetFormat || 'pdf').toLowerCase().trim();
+        // Remove ALL leading dots sent by frontend
+        rawTarget = rawTarget.replace(/^\.+/, '');
 
         // Format mapping for LibreOffice compatibility
         const formatMap = {
@@ -67,8 +70,7 @@ app.post('/convert-cloud', upload.single('file'), async (req, res) => {
             'xls': 'xlsx',
             'jpeg': 'jpg'
         };
-        const targetFormat = formatMap[rawTarget] || rawTarget;
-        const cleanExt = targetFormat.replace('.', '');
+        const cleanExt = formatMap[rawTarget] || rawTarget;
 
         const baseName = path.parse(originalName).name;
         const outputFileName = `${Date.now()}-${baseName}.${cleanExt}`;
@@ -98,9 +100,9 @@ app.post('/convert-cloud', upload.single('file'), async (req, res) => {
             const pdfBytes = await pdfDoc.save();
             fs.writeFileSync(outputPath, pdfBytes);
         } else {
-            // Complex Documents & Media (DOCX, PPTX, XLSX, ODT, TXT, CSV, PDF) via Local LibreOffice Engine
+            // Complex Documents & Media via Local LibreOffice Engine (Pass clean extension)
             const fileBuf = fs.readFileSync(inputPath);
-            const convertedBuf = await libre.convertAsync(fileBuf, `.${cleanExt}`, undefined);
+            const convertedBuf = await libre.convertAsync(fileBuf, cleanExt, undefined);
             fs.writeFileSync(outputPath, convertedBuf);
         }
 
@@ -130,7 +132,7 @@ app.post('/compress-cloud', upload.single('file'), async (req, res) => {
 
         const inputPath = req.file.path;
         const originalName = req.file.originalname;
-        const srcExt = path.extname(originalName).replace('.', '').toLowerCase();
+        const srcExt = path.extname(originalName).replace(/^\.+/, '').toLowerCase();
         const baseName = path.parse(originalName).name;
         const outputFileName = `${Date.now()}-compressed-${baseName}.${srcExt}`;
         const outputPath = path.join(uploadDir, outputFileName);
@@ -146,7 +148,7 @@ app.post('/compress-cloud', upload.single('file'), async (req, res) => {
         } else {
             // PDF & Document Compression via LibreOffice Engine
             const fileBuf = fs.readFileSync(inputPath);
-            const convertedBuf = await libre.convertAsync(fileBuf, `.pdf`, undefined);
+            const convertedBuf = await libre.convertAsync(fileBuf, 'pdf', undefined);
             fs.writeFileSync(outputPath, convertedBuf);
         }
 
