@@ -42,7 +42,7 @@ function purgeFiles(pin) {
     }
 }
 
-// Standard File Upload
+// 1. Standard File Upload (AirShare)
 app.post('/upload', upload.array('files', 10), (req, res) => {
     if (!req.files || req.files.length === 0) {
         return res.status(400).json({ success: false, message: 'No files uploaded.' });
@@ -53,7 +53,7 @@ app.post('/upload', upload.array('files', 10), (req, res) => {
     return res.json({ success: true, pin, fileCount: req.files.length, expiresInSeconds: 60 });
 });
 
-// Universal Converter (PDF -> ALL & ALL -> PDF)
+// 2. Universal Converter (PDF -> ALL & ALL -> PDF)
 app.post('/convert-cloud', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded.' });
@@ -225,7 +225,7 @@ wb.save(r'${outputPath}')
     }
 });
 
-// Fast File Compression Engine
+// 3. Fast File Compression Engine with Dynamic Target Quality Support
 app.post('/compress-cloud', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded.' });
@@ -237,15 +237,27 @@ app.post('/compress-cloud', upload.single('file'), async (req, res) => {
         const outputFileName = `${Date.now()}-compressed-${baseName}.${srcExt}`;
         const outputPath = path.join(uploadDir, outputFileName);
 
+        // Get custom quality/size parameter from frontend slider (Default: 50%)
+        let targetQuality = parseInt(req.body.targetQuality || '50', 10);
+        if (isNaN(targetQuality) || targetQuality < 10) targetQuality = 10;
+        if (targetQuality > 90) targetQuality = 90;
+
         const imageFormats = ['jpg', 'jpeg', 'png', 'webp'];
         if (imageFormats.includes(srcExt)) {
             let sharpInstance = sharp(inputPath);
-            if (srcExt === 'jpg' || srcExt === 'jpeg') sharpInstance = sharpInstance.jpeg({ quality: 50, mozjpeg: true });
-            else if (srcExt === 'png') sharpInstance = sharpInstance.png({ quality: 50, compressionLevel: 9 });
-            else if (srcExt === 'webp') sharpInstance = sharpInstance.webp({ quality: 50 });
+            if (srcExt === 'jpg' || srcExt === 'jpeg') {
+                sharpInstance = sharpInstance.jpeg({ quality: targetQuality, mozjpeg: true });
+            } else if (srcExt === 'png') {
+                // Map 10-90 quality slider value to PNG compression level 9 to 1
+                const pngLevel = Math.max(1, Math.min(9, Math.round(9 - (targetQuality / 10))));
+                sharpInstance = sharpInstance.png({ quality: targetQuality, compressionLevel: pngLevel });
+            } else if (srcExt === 'webp') {
+                sharpInstance = sharpInstance.webp({ quality: targetQuality });
+            }
 
             await sharpInstance.toFile(outputPath);
         } else {
+            // PDF & Document Compression via LibreOffice Engine
             const tempOutDir = path.join(uploadDir, `comp-${Date.now()}`);
             fs.mkdirSync(tempOutDir, { recursive: true });
             await execPromise(`soffice --headless --convert-to pdf "${inputPath}" --outdir "${tempOutDir}"`);
@@ -274,7 +286,7 @@ app.post('/compress-cloud', upload.single('file'), async (req, res) => {
     }
 });
 
-// File Info API
+// 4. File Info API
 app.get('/api/files/:pin', (req, res) => {
     const { pin } = req.params;
     const record = activePins[pin];
@@ -282,7 +294,7 @@ app.get('/api/files/:pin', (req, res) => {
     return res.json({ success: true, files: record.files.map((file, index) => ({ index, originalname: file.originalname, size: file.size })) });
 });
 
-// Download File
+// 5. Download File
 app.get('/download/:pin/:index', (req, res) => {
     const { pin, index } = req.params;
     const record = activePins[pin];

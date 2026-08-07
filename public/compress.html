@@ -11,7 +11,7 @@
 
     <style>
         :root {
-            --primary: #4f46e5; --primary-hover: #4338ca; --accent: #06b6d4;
+            --primary: #4f46e5; --primary-hover: #4338ca; --accent: #06b6d4; --purple-accent: #c084fc;
             --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
             --card-bg: rgba(15, 23, 42, 0.65); --card-border: rgba(255, 255, 255, 0.12);
             --text-main: #f8fafc; --text-muted: #94a3b8; --danger: #ef4444; --success: #10b981;
@@ -26,14 +26,64 @@
         .nav-tab.active { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; box-shadow: 0 4px 15px rgba(79, 70, 229, 0.35); }
 
         .main-container { width: 100%; max-width: 900px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 40px; }
-        .card { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--card-border); border-radius: 20px; padding: 30px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); }
+        .card { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--card-border); border-radius: 20px; padding: 30px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); display: flex; flex-direction: column; justify-content: space-between; }
         .card-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
         .card-desc { font-size: 0.875rem; color: var(--text-muted); margin-bottom: 20px; }
 
-        .drop-zone { border: 2px dashed rgba(255, 255, 255, 0.2); border-radius: 14px; padding: 24px; text-align: center; cursor: pointer; background: rgba(255, 255, 255, 0.02); margin-bottom: 12px; }
+        .drop-zone { border: 2px dashed rgba(255, 255, 255, 0.2); border-radius: 14px; padding: 24px; text-align: center; cursor: pointer; background: rgba(255, 255, 255, 0.02); margin-bottom: 12px; transition: all 0.3s ease; }
+        .drop-zone:hover { border-color: var(--accent); background: rgba(6, 182, 212, 0.08); }
         input[type="file"] { display: none; }
 
-        .btn { width: 100%; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        /* Target Size Adjustment Box */
+        .size-adjust-box {
+            display: none;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 16px;
+        }
+
+        .size-slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .size-slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.15);
+            outline: none;
+            cursor: pointer;
+            accent-color: var(--accent);
+        }
+
+        .btn { width: 100%; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease; }
+        .btn:hover { opacity: 0.95; transform: scale(0.99); }
+
+        /* Glowing Spinner Animation */
+        .loader-box { display: none; flex-direction: column; align-items: center; justify-content: center; padding: 35px 10px; text-align: center; }
+        .glowing-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(6, 182, 212, 0.15);
+            border-left-color: var(--accent);
+            border-top-color: var(--purple-accent);
+            border-radius: 50%;
+            animation: spinGlow 0.8s linear infinite;
+            filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.6));
+        }
+
+        @keyframes spinGlow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         .result-box { display: none; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 14px; padding: 20px; text-align: center; margin-top: 15px; }
         .pin-code { font-size: 2rem; font-weight: 800; letter-spacing: 6px; color: var(--success); margin: 6px 0; }
         .timer-badge { font-size: 0.85rem; font-weight: 700; color: var(--danger); background: rgba(239, 68, 68, 0.15); padding: 6px 14px; border-radius: 20px; display: inline-block; }
@@ -57,27 +107,52 @@
     </div>
 
     <div class="main-container">
+        <!-- Left Compress Card -->
         <div class="card">
-            <div class="card-title"><i class="fa-solid fa-file-zipper" style="color: var(--accent);"></i> Document & Image Compressor</div>
-            <p class="card-desc">Compress PDFs, PPTs, Word, Excel & Image files up to 80% without quality loss.</p>
+            <div>
+                <div class="card-title"><i class="fa-solid fa-file-zipper" style="color: var(--accent);"></i> Document & Image Compressor</div>
+                <p class="card-desc">Compress PDFs, PPTs, Word, Excel & Image files up to 80% without quality loss.</p>
 
-            <div class="drop-zone" onclick="document.getElementById('compFile').click()">
-                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: var(--accent);"></i>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">Click or Drag file here</p>
-            </div>
-            <input type="file" id="compFile" onchange="handleCompressSelect(event)">
+                <div class="drop-zone" onclick="document.getElementById('compFile').click()">
+                    <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: var(--accent);"></i>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">Click or Drag file here</p>
+                </div>
+                <input type="file" id="compFile" onchange="handleCompressSelect(event)">
 
-            <div id="originalSizeInfo" style="display:none; font-size: 0.85rem; margin-bottom: 12px; color: var(--success);">
-                Original File Size: <strong id="origSizeValue">0 KB</strong>
+                <div id="originalSizeInfo" style="display:none; font-size: 0.85rem; margin-bottom: 12px; color: var(--success);">
+                    Original File Size: <strong id="origSizeValue">0 KB</strong>
+                </div>
+
+                <!-- Custom Target Size Slider Box -->
+                <div id="sizeAdjustBox" class="size-adjust-box">
+                    <div class="size-slider-label">
+                        <span>Target Compressed Size:</span>
+                        <span id="targetSizeLabel" style="color: var(--accent); font-weight: 700;">50%</span>
+                    </div>
+                    <input type="range" id="sizeSlider" class="size-slider" min="10" max="90" value="50" oninput="updateTargetSizeLabel(this.value)">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted); margin-top: 6px;">
+                        <span>Max Compression (~<span id="minApproxLabel">0 KB</span>)</span>
+                        <span>Low Compression (~<span id="maxApproxLabel">0 KB</span>)</span>
+                    </div>
+                </div>
             </div>
 
             <button class="btn" onclick="startCloudCompressProcess()"><i class="fa-solid fa-bolt"></i> Compress File Now</button>
         </div>
 
-        <div class="card">
+        <!-- Right Output Details Card -->
+        <div class="card" style="justify-content: center;">
             <div class="card-title"><i class="fa-solid fa-square-check" style="color: var(--success);"></i> Compressed Output Details</div>
             <p class="card-desc">Compressed file details and instant download link.</p>
 
+            <!-- Loading Spinner Box -->
+            <div id="loaderBox" class="loader-box">
+                <div class="glowing-spinner"></div>
+                <p style="margin-top: 16px; font-weight: 700; color: var(--text-main); font-size: 0.95rem;">Compressing file... Please wait</p>
+                <span style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">Optimizing file quality and size</span>
+            </div>
+
+            <!-- Output Result Box -->
             <div id="resultBox" class="result-box">
                 <p style="font-size: 0.85rem; color: var(--text-muted);">BEFORE COMPRESS: <span id="resBeforeSize" style="color:white; font-weight:bold;">0 KB</span></p>
                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">AFTER COMPRESS: <span id="resAfterSize" style="color:var(--success); font-weight:bold;">0 KB</span></p>
@@ -116,6 +191,7 @@
     <script>
         let selectedFile = null;
         let countdownInterval;
+        let compressController = null; // Auto-abort active request on new selection
 
         function formatBytes(bytes) {
             if (bytes === 0) return '0 Bytes';
@@ -130,21 +206,62 @@
                 selectedFile = e.target.files[0];
                 document.getElementById('originalSizeInfo').style.display = 'block';
                 document.getElementById('origSizeValue').innerText = formatBytes(selectedFile.size);
+                
+                // Show Target Size Adjuster
+                document.getElementById('sizeAdjustBox').style.display = 'block';
+                updateTargetSizeLabel(document.getElementById('sizeSlider').value);
             }
         }
 
-        function startCloudCompressProcess() {
+        function updateTargetSizeLabel(val) {
+            if (!selectedFile) return;
+            const approxBytes = Math.round(selectedFile.size * (val / 100));
+            document.getElementById('targetSizeLabel').innerText = `${val}% (~${formatBytes(approxBytes)})`;
+            document.getElementById('minApproxLabel').innerText = formatBytes(selectedFile.size * 0.1);
+            document.getElementById('maxApproxLabel').innerText = formatBytes(selectedFile.size * 0.9);
+        }
+
+        async function startCloudCompressProcess() {
             if (!selectedFile) return alert('Please select a file to compress.');
+
+            const emptyPlaceholder = document.getElementById('emptyPlaceholder');
+            const resultBox = document.getElementById('resultBox');
+            const loaderBox = document.getElementById('loaderBox');
+            const targetRatio = document.getElementById('sizeSlider').value;
+
+            // 1. CANCEL ONGOING PREVIOUS PROCESS IF RUNNING
+            if (compressController) {
+                compressController.abort();
+                console.log('Previous compression process cancelled.');
+            }
+
+            // 2. CREATE NEW CONTROLLER FOR THIS REQUEST
+            compressController = new AbortController();
+            const { signal } = compressController;
+
+            // 3. UI STATE UPDATE
+            emptyPlaceholder.style.display = 'none';
+            resultBox.style.display = 'none';
+            loaderBox.style.display = 'flex';
 
             const formData = new FormData();
             formData.append('file', selectedFile);
+            formData.append('targetQuality', targetRatio);
 
-            fetch('/compress-cloud', { method: 'POST', body: formData })
-            .then(res => res.json())
-            .then(data => {
+            try {
+                const res = await fetch('/compress-cloud', {
+                    method: 'POST',
+                    body: formData,
+                    signal: signal
+                });
+
+                const data = await res.json();
+
+                // Hide Spinner
+                loaderBox.style.display = 'none';
+
                 if (data.success) {
-                    document.getElementById('emptyPlaceholder').style.display = 'none';
-                    document.getElementById('resultBox').style.display = 'block';
+                    resultBox.style.display = 'block';
 
                     document.getElementById('resBeforeSize').innerText = formatBytes(data.originalSize || selectedFile.size);
                     document.getElementById('resAfterSize').innerText = formatBytes(data.compressedSize);
@@ -166,10 +283,22 @@
                         else { clearInterval(countdownInterval); document.getElementById('pinDisplay').innerText = '------'; document.getElementById('timerDisplay').innerText = '⚠️ PIN Expired!'; }
                     }, 1000);
                 } else {
+                    emptyPlaceholder.style.display = 'block';
                     alert(data.message || 'Compression failed.');
                 }
-            })
-            .catch(err => alert('Server connection error.'));
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    console.log('Request aborted for new compression.');
+                    return;
+                }
+                loaderBox.style.display = 'none';
+                emptyPlaceholder.style.display = 'block';
+                alert('Server connection error.');
+            } finally {
+                if (compressController && compressController.signal === signal) {
+                    compressController = null;
+                }
+            }
         }
     </script>
 </body>
