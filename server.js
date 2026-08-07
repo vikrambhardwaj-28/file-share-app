@@ -4,13 +4,10 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const sharp = require('sharp');
-const libre = require('libreoffice-convert');
 const { PDFDocument } = require('pdf-lib');
 const { exec } = require('child_process');
 const util = require('util');
 const execPromise = util.promisify(exec);
-
-libre.convertAsync = require('util').promisify(libre.convert);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -43,7 +40,7 @@ function purgeFiles(pin) {
     }
 }
 
-// 1. AirShare Standard File Upload
+// Standard File Upload
 app.post('/upload', upload.array('files', 10), (req, res) => {
     if (!req.files || req.files.length === 0) {
         return res.status(400).json({ success: false, message: 'No files uploaded.' });
@@ -54,7 +51,7 @@ app.post('/upload', upload.array('files', 10), (req, res) => {
     return res.json({ success: true, pin, fileCount: req.files.length, expiresInSeconds: 60 });
 });
 
-// 2. AirFormat Endpoint (Local PDF->DOCX + LibreOffice + Sharp Engines)
+// Universal All-to-All Converter
 app.post('/convert-cloud', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded.' });
@@ -80,16 +77,15 @@ app.post('/convert-cloud', upload.single('file'), async (req, res) => {
 
         const imageFormats = ['jpg', 'jpeg', 'png', 'webp'];
 
-        // A. Image to Image Conversion (Sharp)
+        // 1. Image to Image (Sharp)
         if (imageFormats.includes(srcExt) && imageFormats.includes(cleanExt)) {
             let sharpInstance = sharp(inputPath);
             if (cleanExt === 'jpg' || cleanExt === 'jpeg') sharpInstance = sharpInstance.jpeg({ quality: 90 });
             else if (cleanExt === 'png') sharpInstance = sharpInstance.png({ compressionLevel: 8 });
             else if (cleanExt === 'webp') sharpInstance = sharpInstance.webp({ quality: 85 });
-
             await sharpInstance.toFile(outputPath);
 
-        // B. Image to PDF Conversion (PDFDocument)
+        // 2. Image to PDF
         } else if (imageFormats.includes(srcExt) && cleanExt === 'pdf') {
             const imgBytes = fs.readFileSync(inputPath);
             const pdfDoc = await PDFDocument.create();
@@ -103,19 +99,41 @@ app.post('/convert-cloud', upload.single('file'), async (req, res) => {
             const pdfBytes = await pdfDoc.save();
             fs.writeFileSync(outputPath, pdfBytes);
 
-        // C. PDF to DOCX/DOC Conversion (Local python pdf2docx engine)
+        // 3. PDF to Images (pdftoppm CLI)
+        } else if (srcExt === 'pdf' && imageFormats.includes(cleanExt)) {
+            const imgFormatFlag = cleanExt === 'jpg' ? '-jpeg' : `-${cleanExt}`;
+            const prefix = path.join(uploadDir, `${Date.now()}-${baseName}`);
+            await execPromise(`pdftoppm ${imgFormatFlag} -r 150 -f 1 -l 1 "${inputPath}" "${prefix}"`);
+            const generatedFiles = fs.readdirSync(uploadDir).filter(f => f.startsWith(path.basename(prefix)));
+            if (generatedFiles.length > 0) {
+                fs.renameSync(path.join(uploadDir, generatedFiles[0]), outputPath);
+            } else {
+                throw new Error('PDF to Image extraction failed.');
+            }
+
+        // 4. PDF to DOCX / DOC (python pdf2docx CLI)
         } else if (srcExt === 'pdf' && (cleanExt === 'docx' || cleanExt === 'doc')) {
             const pythonCmd = `python3 -c "from pdf2docx import Converter; cv = Converter(r'${inputPath}'); cv.convert(r'${outputPath}'); cv.close()"`;
             await execPromise(pythonCmd);
 
-        // D. DOCX / PPTX / XLSX / ODT / TXT to PDF Conversion (Local LibreOffice engine)
-        } else if (cleanExt === 'pdf') {
-            const fileBuf = fs.readFileSync(inputPath);
-            const convertedBuf = await libre.convertAsync(fileBuf, 'pdf', undefined);
-            fs.writeFileSync(outputPath, convertedBuf);
-
+        // 5. All Documents (DOCX, PPTX, XLSX, ODT, TXT, CSV, HTML, PDF) -> Direct Native Soffice CLI
         } else {
-            return res.status(400).json({ success: false, message: `Conversion from .${srcExt} to .${cleanExt} is not supported.` });
+            const tempOutDir = path.join(uploadDir, `conv-${Date.now()}`);
+            fs.mkdirSync(tempOutDir, { recursive: true });
+
+            // Direct CLI execution eliminates 'no export filter' bugs
+            const cmd = `soffice --headless --convert-to ${cleanExt} "${inputPath}" --outdir "${tempOutDir}"`;
+            await execPromise(cmd);
+
+            const files = fs.readdirSync(tempOutDir);
+            if (files.length === 0) {
+                fs.rmdirSync(tempOutDir, { recursive: true });
+                throw new Error(`LibreOffice CLI could not convert .${srcExt} to .${cleanExt}`);
+            }
+
+            const convertedFilePath = path.join(tempOutDir, files[0]);
+            fs.renameSync(convertedFilePath, outputPath);
+            fs.rmdirSync(tempOutDir, { recursive: true });
         }
 
         fs.unlink(inputPath, () => {});
@@ -137,7 +155,7 @@ app.post('/convert-cloud', upload.single('file'), async (req, res) => {
     }
 });
 
-// 3. AirCompress Endpoint (Fast Image & File Compression Engine)
+// Fast File Compression Engine
 app.post('/compress-cloud', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded.' });
@@ -158,9 +176,12 @@ app.post('/compress-cloud', upload.single('file'), async (req, res) => {
 
             await sharpInstance.toFile(outputPath);
         } else {
-            const fileBuf = fs.readFileSync(inputPath);
-            const convertedBuf = await libre.convertAsync(fileBuf, 'pdf', undefined);
-            fs.writeFileSync(outputPath, convertedBuf);
+            const tempOutDir = path.join(uploadDir, `comp-${Date.now()}`);
+            fs.mkdirSync(tempOutDir, { recursive: true });
+            await execPromise(`soffice --headless --convert-to pdf "${inputPath}" --outdir "${tempOutDir}"`);
+            const files = fs.readdirSync(tempOutDir);
+            if (files.length > 0) fs.renameSync(path.join(tempOutDir, files[0]), outputPath);
+            fs.rmdirSync(tempOutDir, { recursive: true });
         }
 
         const compressedSize = fs.statSync(outputPath).size;
@@ -183,7 +204,7 @@ app.post('/compress-cloud', upload.single('file'), async (req, res) => {
     }
 });
 
-// 4. File Information API
+// File Info API
 app.get('/api/files/:pin', (req, res) => {
     const { pin } = req.params;
     const record = activePins[pin];
@@ -191,7 +212,7 @@ app.get('/api/files/:pin', (req, res) => {
     return res.json({ success: true, files: record.files.map((file, index) => ({ index, originalname: file.originalname, size: file.size })) });
 });
 
-// 5. File Download Route
+// Download File
 app.get('/download/:pin/:index', (req, res) => {
     const { pin, index } = req.params;
     const record = activePins[pin];
