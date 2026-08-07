@@ -1,6 +1,6 @@
 FROM node:20-slim
 
-# Install LibreOffice, Poppler (PDF to Image), Python (PDF to DOCX), and Fonts
+# Install LibreOffice, Poppler (pdftoppm, pdftotext), Python3, and Fonts
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libreoffice \
     poppler-utils \
@@ -10,10 +10,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-dejavu-core \
     && rm -rf /var/lib/apt-get/lists/*
 
-# Setup Virtualenv for pdf2docx
+# Setup Virtualenv for Python PDF utilities
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-RUN pip install pdf2docx
+RUN pip install pdf2docx pdfplumber openpyxl
 
 WORKDIR /usr/src/app
 

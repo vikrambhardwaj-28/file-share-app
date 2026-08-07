@@ -35,7 +35,9 @@ const activePins = {};
 
 function purgeFiles(pin) {
     if (activePins[pin]) {
-        activePins[pin].files.forEach(file => fs.unlink(file.path, () => {}));
+        activePins[pin].files.forEach(file => {
+            if (fs.existsSync(file.path)) fs.unlink(file.path, () => {});
+        });
         delete activePins[pin];
     }
 }
@@ -51,7 +53,7 @@ app.post('/upload', upload.array('files', 10), (req, res) => {
     return res.json({ success: true, pin, fileCount: req.files.length, expiresInSeconds: 60 });
 });
 
-// Universal All-to-All Converter
+// Universal Converter (PDF -> ALL & ALL -> PDF)
 app.post('/convert-cloud', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded.' });
@@ -99,36 +101,104 @@ app.post('/convert-cloud', upload.single('file'), async (req, res) => {
             const pdfBytes = await pdfDoc.save();
             fs.writeFileSync(outputPath, pdfBytes);
 
-        // 3. PDF to Images (pdftoppm CLI)
-        } else if (srcExt === 'pdf' && imageFormats.includes(cleanExt)) {
-            const imgFormatFlag = cleanExt === 'jpg' ? '-jpeg' : `-${cleanExt}`;
-            const prefix = path.join(uploadDir, `${Date.now()}-${baseName}`);
-            await execPromise(`pdftoppm ${imgFormatFlag} -r 150 -f 1 -l 1 "${inputPath}" "${prefix}"`);
-            const generatedFiles = fs.readdirSync(uploadDir).filter(f => f.startsWith(path.basename(prefix)));
-            if (generatedFiles.length > 0) {
-                fs.renameSync(path.join(uploadDir, generatedFiles[0]), outputPath);
+        // 3. PDF as Source File Handling
+        } else if (srcExt === 'pdf') {
+
+            // A. PDF to Image
+            if (imageFormats.includes(cleanExt)) {
+                const imgFormatFlag = cleanExt === 'jpg' ? '-jpeg' : `-${cleanExt}`;
+                const prefix = path.join(uploadDir, `${Date.now()}-${baseName}`);
+                await execPromise(`pdftoppm ${imgFormatFlag} -r 150 -f 1 -l 1 "${inputPath}" "${prefix}"`);
+                const generatedFiles = fs.readdirSync(uploadDir).filter(f => f.startsWith(path.basename(prefix)));
+                if (generatedFiles.length > 0) {
+                    fs.renameSync(path.join(uploadDir, generatedFiles[0]), outputPath);
+                } else {
+                    throw new Error('PDF to Image extraction failed.');
+                }
+
+            // B. PDF to DOCX / DOC
+            } else if (cleanExt === 'docx' || cleanExt === 'doc') {
+                const pythonCmd = `python3 -c "from pdf2docx import Converter; cv = Converter(r'${inputPath}'); cv.convert(r'${outputPath}'); cv.close()"`;
+                await execPromise(pythonCmd);
+
+            // C. PDF to TXT
+            } else if (cleanExt === 'txt') {
+                await execPromise(`pdftotext "${inputPath}" "${outputPath}"`);
+
+            // D. PDF to CSV
+            } else if (cleanExt === 'csv') {
+                const pyScript = `import pdfplumber, csv
+with pdfplumber.open(r'${inputPath}') as pdf, open(r'${outputPath}', 'w', newline='', encoding='utf-8') as f:
+    writer = csv.writer(f)
+    for page in pdf.pages:
+        tables = page.extract_tables()
+        for table in tables:
+            for row in table:
+                writer.writerow([(cell or '').replace('\\n', ' ') for cell in row])
+        if not tables:
+            text = page.extract_text()
+            if text:
+                for line in text.split('\\n'):
+                    writer.writerow([line])
+`;
+                const scriptPath = path.join(uploadDir, `extract_${Date.now()}.py`);
+                fs.writeFileSync(scriptPath, pyScript);
+                await execPromise(`python3 "${scriptPath}"`);
+                if (fs.existsSync(scriptPath)) fs.unlinkSync(scriptPath);
+
+            // E. PDF to XLSX
+            } else if (cleanExt === 'xlsx') {
+                const pyScript = `import pdfplumber, openpyxl
+wb = openpyxl.Workbook()
+ws = wb.active
+with pdfplumber.open(r'${inputPath}') as pdf:
+    for page in pdf.pages:
+        tables = page.extract_tables()
+        for table in tables:
+            for row in table:
+                ws.append([(cell or '').replace('\\n', ' ') for cell in row])
+        if not tables:
+            text = page.extract_text()
+            if text:
+                for line in text.split('\\n'):
+                    ws.append([line])
+wb.save(r'${outputPath}')
+`;
+                const scriptPath = path.join(uploadDir, `extract_${Date.now()}.py`);
+                fs.writeFileSync(scriptPath, pyScript);
+                await execPromise(`python3 "${scriptPath}"`);
+                if (fs.existsSync(scriptPath)) fs.unlinkSync(scriptPath);
+
+            // F. PDF to ODT / PPTX / HTML (Chained Conversion: PDF -> DOCX -> Target)
             } else {
-                throw new Error('PDF to Image extraction failed.');
+                const tempDocxPath = path.join(uploadDir, `temp-${Date.now()}.docx`);
+                const pythonCmd = `python3 -c "from pdf2docx import Converter; cv = Converter(r'${inputPath}'); cv.convert(r'${tempDocxPath}'); cv.close()"`;
+                await execPromise(pythonCmd);
+
+                const tempOutDir = path.join(uploadDir, `conv-${Date.now()}`);
+                fs.mkdirSync(tempOutDir, { recursive: true });
+                await execPromise(`soffice --headless --convert-to ${cleanExt} "${tempDocxPath}" --outdir "${tempOutDir}"`);
+
+                const files = fs.readdirSync(tempOutDir);
+                if (files.length > 0) {
+                    fs.renameSync(path.join(tempOutDir, files[0]), outputPath);
+                }
+                if (fs.existsSync(tempDocxPath)) fs.unlinkSync(tempDocxPath);
+                fs.rmdirSync(tempOutDir, { recursive: true });
             }
 
-        // 4. PDF to DOCX / DOC (python pdf2docx CLI)
-        } else if (srcExt === 'pdf' && (cleanExt === 'docx' || cleanExt === 'doc')) {
-            const pythonCmd = `python3 -c "from pdf2docx import Converter; cv = Converter(r'${inputPath}'); cv.convert(r'${outputPath}'); cv.close()"`;
-            await execPromise(pythonCmd);
-
-        // 5. All Documents (DOCX, PPTX, XLSX, ODT, TXT, CSV, HTML, PDF) -> Direct Native Soffice CLI
+        // 4. All Other Documents (DOCX, PPTX, XLSX, ODT, TXT, CSV) to PDF / Other Formats
         } else {
             const tempOutDir = path.join(uploadDir, `conv-${Date.now()}`);
             fs.mkdirSync(tempOutDir, { recursive: true });
 
-            // Direct CLI execution eliminates 'no export filter' bugs
             const cmd = `soffice --headless --convert-to ${cleanExt} "${inputPath}" --outdir "${tempOutDir}"`;
             await execPromise(cmd);
 
             const files = fs.readdirSync(tempOutDir);
             if (files.length === 0) {
                 fs.rmdirSync(tempOutDir, { recursive: true });
-                throw new Error(`LibreOffice CLI could not convert .${srcExt} to .${cleanExt}`);
+                throw new Error(`Could not convert .${srcExt} to .${cleanExt}`);
             }
 
             const convertedFilePath = path.join(tempOutDir, files[0]);
@@ -136,7 +206,7 @@ app.post('/convert-cloud', upload.single('file'), async (req, res) => {
             fs.rmdirSync(tempOutDir, { recursive: true });
         }
 
-        fs.unlink(inputPath, () => {});
+        if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
 
         const pin = Math.floor(100000 + Math.random() * 900000).toString();
         activePins[pin] = {
@@ -185,7 +255,7 @@ app.post('/compress-cloud', upload.single('file'), async (req, res) => {
         }
 
         const compressedSize = fs.statSync(outputPath).size;
-        fs.unlink(inputPath, () => {});
+        if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
 
         const pin = Math.floor(100000 + Math.random() * 900000).toString();
         activePins[pin] = {
