@@ -11,7 +11,7 @@
 
     <style>
         :root {
-            --primary: #4f46e5; --primary-hover: #4338ca; --accent: #06b6d4;
+            --primary: #4f46e5; --primary-hover: #4338ca; --accent: #06b6d4; --purple-accent: #c084fc;
             --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
             --card-bg: rgba(15, 23, 42, 0.65); --card-border: rgba(255, 255, 255, 0.12);
             --text-main: #f8fafc; --text-muted: #94a3b8; --danger: #ef4444; --success: #10b981; --warning: #f59e0b;
@@ -26,18 +26,39 @@
         .nav-tab.active { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; box-shadow: 0 4px 15px rgba(79, 70, 229, 0.35); }
 
         .main-container { width: 100%; max-width: 900px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 24px; }
-        .card { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--card-border); border-radius: 20px; padding: 30px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); }
+        .card { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--card-border); border-radius: 20px; padding: 30px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); display: flex; flex-direction: column; justify-content: space-between; }
         .card-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
         .card-desc { font-size: 0.875rem; color: var(--text-muted); margin-bottom: 20px; }
 
-        .drop-zone { border: 2px dashed rgba(255, 255, 255, 0.2); border-radius: 14px; padding: 24px; text-align: center; cursor: pointer; background: rgba(255, 255, 255, 0.02); margin-bottom: 12px; }
+        .drop-zone { border: 2px dashed rgba(255, 255, 255, 0.2); border-radius: 14px; padding: 24px; text-align: center; cursor: pointer; background: rgba(255, 255, 255, 0.02); margin-bottom: 12px; transition: all 0.3s ease; }
+        .drop-zone:hover { border-color: var(--purple-accent); background: rgba(192, 132, 252, 0.08); }
         input[type="file"] { display: none; }
 
         .format-select-box { background: rgba(0, 0, 0, 0.2); border: 1px solid var(--card-border); padding: 12px; border-radius: 10px; margin-bottom: 15px; }
         .format-select-box select { width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border); color: white; padding: 10px; border-radius: 6px; outline: none; font-weight: 600; }
         .format-select-box select option { background: #0f172a; color: white; }
 
-        .btn { width: 100%; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn { width: 100%; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease; }
+        .btn:hover { opacity: 0.95; transform: scale(0.99); }
+        
+        /* Processing Animation Loader */
+        .loader-box { display: none; flex-direction: column; align-items: center; justify-content: center; padding: 35px 10px; text-align: center; }
+        .glowing-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(192, 132, 252, 0.15);
+            border-left-color: var(--purple-accent);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spinGlow 0.8s linear infinite;
+            filter: drop-shadow(0 0 8px rgba(192, 132, 252, 0.6));
+        }
+
+        @keyframes spinGlow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         .result-box { display: none; background: rgba(192, 132, 252, 0.08); border: 1px solid rgba(192, 132, 252, 0.3); border-radius: 14px; padding: 20px; text-align: center; margin-top: 15px; }
         .pin-code { font-size: 2rem; font-weight: 800; letter-spacing: 6px; color: var(--success); margin: 6px 0; }
         .timer-badge { font-size: 0.85rem; font-weight: 700; color: var(--danger); background: rgba(239, 68, 68, 0.15); padding: 6px 14px; border-radius: 20px; display: inline-block; }
@@ -69,52 +90,66 @@
     </div>
 
     <div class="main-container">
+        <!-- Left Converter Input -->
         <div class="card">
-            <div class="card-title"><i class="fa-solid fa-file-code" style="color: #c084fc;"></i> Format Converter</div>
-            <p class="card-desc">Select target format extension for high-precision conversion.</p>
+            <div>
+                <div class="card-title"><i class="fa-solid fa-file-code" style="color: #c084fc;"></i> Format Converter</div>
+                <p class="card-desc">Select target format extension for high-precision conversion.</p>
 
-            <div class="drop-zone" onclick="document.getElementById('fmtFile').click()">
-                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: #c084fc;"></i>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">Click or Drag file to convert</p>
+                <div class="drop-zone" onclick="document.getElementById('fmtFile').click()">
+                    <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: #c084fc;"></i>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">Click or Drag file to convert</p>
+                </div>
+                <input type="file" id="fmtFile" onchange="handleFormatSelect(event)">
+
+                <div id="selectedFileInfo" style="display:none; font-size: 0.85rem; margin-bottom: 12px; color: var(--accent);">
+                    Selected File: <strong id="fmtFileName">none</strong>
+                </div>
+
+                <div class="format-select-box">
+                    <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px;">Convert To Target Format:</label>
+                    <select id="targetFormatSelect">
+                        <optgroup label="Document & Presentation Formats">
+                            <option value="pdf">PDF Document (.pdf)</option>
+                            <option value="docx">Word Document (.docx)</option>
+                            <option value="doc">Legacy Word (.doc)</option>
+                            <option value="pptx">PowerPoint Presentation (.pptx)</option>
+                            <option value="ppt">Legacy PowerPoint (.ppt)</option>
+                            <option value="odt">OpenOffice Doc (.odt)</option>
+                            <option value="txt">Plain Text (.txt)</option>
+                            <option value="xlsx">Excel Sheet (.xlsx)</option>
+                            <option value="csv">CSV Data (.csv)</option>
+                        </optgroup>
+                        <optgroup label="Image Formats">
+                            <option value="jpeg">JPEG Image (.jpeg)</option>
+                            <option value="jpg">JPG Image (.jpg)</option>
+                            <option value="png">PNG Image (.png)</option>
+                            <option value="webp">WEBP Image (.webp)</option>
+                            <option value="heic">iPhone Photo (.heic)</option>
+                            <option value="svg">Vector Image (.svg)</option>
+                        </optgroup>
+                    </select>
+                </div>
             </div>
-            <input type="file" id="fmtFile" onchange="handleFormatSelect(event)">
 
-            <div id="selectedFileInfo" style="display:none; font-size: 0.85rem; margin-bottom: 12px; color: var(--accent);">
-                Selected File: <strong id="fmtFileName">none</strong>
-            </div>
-
-            <div class="format-select-box">
-                <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px;">Convert To Target Format:</label>
-                <select id="targetFormatSelect">
-                    <optgroup label="Document & Presentation Formats">
-                        <option value="pdf">PDF Document (.pdf)</option>
-                        <option value="docx">Word Document (.docx)</option>
-                        <option value="doc">Legacy Word (.doc)</option>
-                        <option value="pptx">PowerPoint Presentation (.pptx)</option>
-                        <option value="ppt">Legacy PowerPoint (.ppt)</option>
-                        <option value="odt">OpenOffice Doc (.odt)</option>
-                        <option value="txt">Plain Text (.txt)</option>
-                        <option value="xlsx">Excel Sheet (.xlsx)</option>
-                        <option value="csv">CSV Data (.csv)</option>
-                    </optgroup>
-                    <optgroup label="Image Formats">
-                        <option value="jpeg">JPEG Image (.jpeg)</option>
-                        <option value="jpg">JPG Image (.jpg)</option>
-                        <option value="png">PNG Image (.png)</option>
-                        <option value="webp">WEBP Image (.webp)</option>
-                        <option value="heic">iPhone Photo (.heic)</option>
-                        <option value="svg">Vector Image (.svg)</option>
-                    </optgroup>
-                </select>
-            </div>
-
-            <button class="btn" style="background: linear-gradient(135deg, #c084fc, #9333ea);" onclick="startCloudConversion()"><i class="fa-solid fa-rotate"></i> Convert Format Now</button>
+            <button class="btn" style="background: linear-gradient(135deg, #c084fc, #9333ea);" onclick="startCloudConversion()">
+                <i class="fa-solid fa-rotate"></i> Convert Format Now
+            </button>
         </div>
 
-        <div class="card">
+        <!-- Right Output Box -->
+        <div class="card" style="justify-content: center;">
             <div class="card-title"><i class="fa-solid fa-circle-check" style="color: var(--success);"></i> Converted Output</div>
             <p class="card-desc">Download converted file directly or share via PIN/QR.</p>
 
+            <!-- Loading Spinner Animation -->
+            <div id="loaderBox" class="loader-box">
+                <div class="glowing-spinner"></div>
+                <p style="margin-top: 16px; font-weight: 700; color: var(--text-main); font-size: 0.95rem;">Converting file... Please wait</p>
+                <span style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">Large files may take a few seconds</span>
+            </div>
+
+            <!-- Output Result Box -->
             <div id="resultBox" class="result-box">
                 <p style="font-size: 0.85rem; color: var(--text-muted);">TARGET FORMAT: <span id="resTargetFmt" style="color:white; font-weight:bold; text-transform:uppercase;">PDF</span></p>
 
@@ -179,6 +214,7 @@
     <script>
         let selectedFile = null;
         let countdownInterval;
+        let conversionController = null; // Stores ongoing request for auto-aborting
 
         function handleFormatSelect(e) {
             if (e.target.files.length > 0) {
@@ -188,20 +224,47 @@
             }
         }
 
-        function startCloudConversion() {
+        async function startCloudConversion() {
             if (!selectedFile) return alert('Please select a file to convert.');
 
             const targetFmt = document.getElementById('targetFormatSelect').value;
+            const emptyPlaceholder = document.getElementById('emptyPlaceholder');
+            const resultBox = document.getElementById('resultBox');
+            const loaderBox = document.getElementById('loaderBox');
+
+            // 1. CANCEL PREVIOUS ONGOING PROCESS IF RUNNING
+            if (conversionController) {
+                conversionController.abort();
+                console.log('Previous conversion process cancelled.');
+            }
+
+            // 2. CREATE NEW CONTROLLER FOR THIS REQUEST
+            conversionController = new AbortController();
+            const { signal } = conversionController;
+
+            // 3. UI ANIMATION STATE
+            emptyPlaceholder.style.display = 'none';
+            resultBox.style.display = 'none';
+            loaderBox.style.display = 'flex';
+
             const formData = new FormData();
             formData.append('file', selectedFile);
             formData.append('targetFormat', targetFmt);
 
-            fetch('/convert-cloud', { method: 'POST', body: formData })
-            .then(res => res.json())
-            .then(data => {
+            try {
+                const res = await fetch('/convert-cloud', {
+                    method: 'POST',
+                    body: formData,
+                    signal: signal
+                });
+
+                const data = await res.json();
+
+                // Hide Spinner
+                loaderBox.style.display = 'none';
+
                 if (data.success) {
-                    document.getElementById('emptyPlaceholder').style.display = 'none';
-                    document.getElementById('resultBox').style.display = 'block';
+                    resultBox.style.display = 'block';
                     document.getElementById('resTargetFmt').innerText = targetFmt;
 
                     const downloadUrl = `/download/${data.pin}/0`;
@@ -223,10 +286,22 @@
                         else { clearInterval(countdownInterval); document.getElementById('pinDisplay').innerText = '------'; document.getElementById('timerDisplay').innerText = '⚠️ PIN Expired!'; }
                     }, 1000);
                 } else {
+                    emptyPlaceholder.style.display = 'block';
                     alert(data.message || 'Conversion failed.');
                 }
-            })
-            .catch(err => alert('Server connection error.'));
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    console.log('Request aborted for new conversion.');
+                    return;
+                }
+                loaderBox.style.display = 'none';
+                emptyPlaceholder.style.display = 'block';
+                alert('Server connection error.');
+            } finally {
+                if (conversionController && conversionController.signal === signal) {
+                    conversionController = null;
+                }
+            }
         }
     </script>
 </body>
