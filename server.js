@@ -50,7 +50,7 @@ app.post('/upload', upload.array('files', 10), (req, res) => {
     return res.json({ success: true, pin, fileCount: req.files.length, expiresInSeconds: 60 });
 });
 
-// 2. AirFormat Endpoint (Handles ALL Formats: DOCX, PPTX, XLSX, ODT, HEIC, PDF, TXT, CSV, Images)
+// 2. AirFormat Endpoint (Cleaned LibreOffice Target Format Handling)
 app.post('/convert-cloud', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded.' });
@@ -58,7 +58,7 @@ app.post('/convert-cloud', upload.single('file'), async (req, res) => {
         const inputPath = req.file.path;
         const originalName = req.file.originalname;
         const srcExt = path.extname(originalName).replace('.', '').toLowerCase();
-        let targetFormat = (req.body.targetFormat || 'pdf').toLowerCase().trim();
+        let rawTarget = (req.body.targetFormat || 'pdf').toLowerCase().trim();
 
         // Format mapping for LibreOffice compatibility
         const formatMap = {
@@ -67,25 +67,24 @@ app.post('/convert-cloud', upload.single('file'), async (req, res) => {
             'xls': 'xlsx',
             'jpeg': 'jpg'
         };
-        if (formatMap[targetFormat]) {
-            targetFormat = formatMap[targetFormat];
-        }
+        const targetFormat = formatMap[rawTarget] || rawTarget;
+        const cleanExt = targetFormat.replace('.', '');
 
         const baseName = path.parse(originalName).name;
-        const outputFileName = `${Date.now()}-${baseName}.${targetFormat}`;
+        const outputFileName = `${Date.now()}-${baseName}.${cleanExt}`;
         const outputPath = path.join(uploadDir, outputFileName);
 
         const imageFormats = ['jpg', 'jpeg', 'png', 'webp'];
 
         // Fast Local Image-to-Image Processing
-        if (imageFormats.includes(srcExt) && imageFormats.includes(targetFormat)) {
+        if (imageFormats.includes(srcExt) && imageFormats.includes(cleanExt)) {
             let sharpInstance = sharp(inputPath);
-            if (targetFormat === 'jpg' || targetFormat === 'jpeg') sharpInstance = sharpInstance.jpeg({ quality: 90 });
-            else if (targetFormat === 'png') sharpInstance = sharpInstance.png({ compressionLevel: 8 });
-            else if (targetFormat === 'webp') sharpInstance = sharpInstance.webp({ quality: 85 });
+            if (cleanExt === 'jpg' || cleanExt === 'jpeg') sharpInstance = sharpInstance.jpeg({ quality: 90 });
+            else if (cleanExt === 'png') sharpInstance = sharpInstance.png({ compressionLevel: 8 });
+            else if (cleanExt === 'webp') sharpInstance = sharpInstance.webp({ quality: 85 });
 
             await sharpInstance.toFile(outputPath);
-        } else if (imageFormats.includes(srcExt) && targetFormat === 'pdf') {
+        } else if (imageFormats.includes(srcExt) && cleanExt === 'pdf') {
             // Image to PDF Direct Conversion
             const imgBytes = fs.readFileSync(inputPath);
             const pdfDoc = await PDFDocument.create();
@@ -99,9 +98,9 @@ app.post('/convert-cloud', upload.single('file'), async (req, res) => {
             const pdfBytes = await pdfDoc.save();
             fs.writeFileSync(outputPath, pdfBytes);
         } else {
-            // Complex Documents & Media (DOCX, PPTX, XLSX, ODT, TXT, CSV, PDF, HEIC) via Local LibreOffice Engine
+            // Complex Documents & Media (DOCX, PPTX, XLSX, ODT, TXT, CSV, PDF) via Local LibreOffice Engine
             const fileBuf = fs.readFileSync(inputPath);
-            const convertedBuf = await libre.convertAsync(fileBuf, `.${targetFormat}`, undefined);
+            const convertedBuf = await libre.convertAsync(fileBuf, `.${cleanExt}`, undefined);
             fs.writeFileSync(outputPath, convertedBuf);
         }
 
@@ -109,7 +108,7 @@ app.post('/convert-cloud', upload.single('file'), async (req, res) => {
 
         const pin = Math.floor(100000 + Math.random() * 900000).toString();
         activePins[pin] = {
-            files: [{ path: outputPath, originalname: `${baseName}.${targetFormat}`, size: fs.statSync(outputPath).size }],
+            files: [{ path: outputPath, originalname: `${baseName}.${cleanExt}`, size: fs.statSync(outputPath).size }],
             expiresAt: Date.now() + 60000,
             downloadCount: 0,
             maxDownloads: 3

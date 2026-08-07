@@ -1,18 +1,19 @@
 FROM node:20-slim
 
-# Install LibreOffice, ImageMagick, and HEIC image libraries
+# Install LibreOffice Writer, Calc, Java JRE, and fonts for full conversion support
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libreoffice \
-    imagemagick \
-    heif-thumbnailer \
-    libheif-examples \
+    libreoffice-writer \
+    libreoffice-calc \
+    libreoffice-impress \
+    libreoffice-java-common \
+    default-jre \
+    fonts-dejavu-core \
     && rm -rf /var/lib/apt-get/lists/*
 
 WORKDIR /usr/src/app
 
 COPY package*.json ./
 
-# Install packages with native linux binaries
 RUN npm install --cpu=x64 --os=linux sharp
 RUN npm install --production
 
