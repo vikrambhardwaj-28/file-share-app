@@ -4,7 +4,9 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const sharp = require('sharp');
-const convertapi = require('convertapi')('GvANKlzuszBkIpK4l6bVIcx9qAKOtPkH'); // Free API Secret Key
+const libre = require('libreoffice-convert');
+const { PDFDocument } = require('pdf-lib');
+libre.convertAsync = require('util').promisify(libre.convert);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -37,7 +39,7 @@ function purgeFiles(pin) {
     }
 }
 
-// 1. AirShare Standard Upload
+// 1. AirShare Standard File Upload
 app.post('/upload', upload.array('files', 10), (req, res) => {
     if (!req.files || req.files.length === 0) {
         return res.status(400).json({ success: false, message: 'No files uploaded.' });
@@ -48,7 +50,7 @@ app.post('/upload', upload.array('files', 10), (req, res) => {
     return res.json({ success: true, pin, fileCount: req.files.length, expiresInSeconds: 60 });
 });
 
-// 2. AirFormat Endpoint (Free Multi-Format Engine)
+// 2. AirFormat Endpoint (Handles ALL Formats: DOCX, PPTX, XLSX, ODT, HEIC, PDF, TXT, CSV, Images)
 app.post('/convert-cloud', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded.' });
@@ -56,12 +58,26 @@ app.post('/convert-cloud', upload.single('file'), async (req, res) => {
         const inputPath = req.file.path;
         const originalName = req.file.originalname;
         const srcExt = path.extname(originalName).replace('.', '').toLowerCase();
-        const targetFormat = (req.body.targetFormat || 'pdf').toLowerCase().trim();
+        let targetFormat = (req.body.targetFormat || 'pdf').toLowerCase().trim();
+
+        // Format mapping for LibreOffice compatibility
+        const formatMap = {
+            'doc': 'docx',
+            'ppt': 'pptx',
+            'xls': 'xlsx',
+            'jpeg': 'jpg'
+        };
+        if (formatMap[targetFormat]) {
+            targetFormat = formatMap[targetFormat];
+        }
+
         const baseName = path.parse(originalName).name;
         const outputFileName = `${Date.now()}-${baseName}.${targetFormat}`;
         const outputPath = path.join(uploadDir, outputFileName);
 
         const imageFormats = ['jpg', 'jpeg', 'png', 'webp'];
+
+        // Fast Local Image-to-Image Processing
         if (imageFormats.includes(srcExt) && imageFormats.includes(targetFormat)) {
             let sharpInstance = sharp(inputPath);
             if (targetFormat === 'jpg' || targetFormat === 'jpeg') sharpInstance = sharpInstance.jpeg({ quality: 90 });
@@ -69,9 +85,24 @@ app.post('/convert-cloud', upload.single('file'), async (req, res) => {
             else if (targetFormat === 'webp') sharpInstance = sharpInstance.webp({ quality: 85 });
 
             await sharpInstance.toFile(outputPath);
+        } else if (imageFormats.includes(srcExt) && targetFormat === 'pdf') {
+            // Image to PDF Direct Conversion
+            const imgBytes = fs.readFileSync(inputPath);
+            const pdfDoc = await PDFDocument.create();
+            let img;
+            if (srcExt === 'png') img = await pdfDoc.embedPng(imgBytes);
+            else img = await pdfDoc.embedJpg(imgBytes);
+
+            const page = pdfDoc.addPage([img.width, img.height]);
+            page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+
+            const pdfBytes = await pdfDoc.save();
+            fs.writeFileSync(outputPath, pdfBytes);
         } else {
-            const result = await convertapi.convert(targetFormat, { File: inputPath }, srcExt);
-            await result.saveFiles(outputPath);
+            // Complex Documents & Media (DOCX, PPTX, XLSX, ODT, TXT, CSV, PDF, HEIC) via Local LibreOffice Engine
+            const fileBuf = fs.readFileSync(inputPath);
+            const convertedBuf = await libre.convertAsync(fileBuf, `.${targetFormat}`, undefined);
+            fs.writeFileSync(outputPath, convertedBuf);
         }
 
         fs.unlink(inputPath, () => {});
@@ -89,11 +120,11 @@ app.post('/convert-cloud', upload.single('file'), async (req, res) => {
 
     } catch (err) {
         console.error('[AirFormat Conversion Error]:', err.message || err);
-        return res.status(500).json({ success: false, message: `Conversion Error: ${err.message || 'Processing failed'}` });
+        return res.status(500).json({ success: false, message: `Conversion failed: ${err.message || 'Processing error'}` });
     }
 });
 
-// 3. AirCompress Endpoint (High-Efficiency Compression)
+// 3. AirCompress Endpoint (Fast Image & File Compression Engine)
 app.post('/compress-cloud', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded.' });
@@ -108,14 +139,16 @@ app.post('/compress-cloud', upload.single('file'), async (req, res) => {
         const imageFormats = ['jpg', 'jpeg', 'png', 'webp'];
         if (imageFormats.includes(srcExt)) {
             let sharpInstance = sharp(inputPath);
-            if (srcExt === 'jpg' || srcExt === 'jpeg') sharpInstance = sharpInstance.jpeg({ quality: 60, mozjpeg: true });
-            else if (srcExt === 'png') sharpInstance = sharpInstance.png({ quality: 60, compressionLevel: 9 });
-            else if (srcExt === 'webp') sharpInstance = sharpInstance.webp({ quality: 55 });
+            if (srcExt === 'jpg' || srcExt === 'jpeg') sharpInstance = sharpInstance.jpeg({ quality: 50, mozjpeg: true });
+            else if (srcExt === 'png') sharpInstance = sharpInstance.png({ quality: 50, compressionLevel: 9 });
+            else if (srcExt === 'webp') sharpInstance = sharpInstance.webp({ quality: 50 });
 
             await sharpInstance.toFile(outputPath);
         } else {
-            const result = await convertapi.convert('compress', { File: inputPath }, srcExt);
-            await result.saveFiles(outputPath);
+            // PDF & Document Compression via LibreOffice Engine
+            const fileBuf = fs.readFileSync(inputPath);
+            const convertedBuf = await libre.convertAsync(fileBuf, `.pdf`, undefined);
+            fs.writeFileSync(outputPath, convertedBuf);
         }
 
         const compressedSize = fs.statSync(outputPath).size;
@@ -138,6 +171,7 @@ app.post('/compress-cloud', upload.single('file'), async (req, res) => {
     }
 });
 
+// 4. File Information API
 app.get('/api/files/:pin', (req, res) => {
     const { pin } = req.params;
     const record = activePins[pin];
@@ -145,6 +179,7 @@ app.get('/api/files/:pin', (req, res) => {
     return res.json({ success: true, files: record.files.map((file, index) => ({ index, originalname: file.originalname, size: file.size })) });
 });
 
+// 5. File Download Route
 app.get('/download/:pin/:index', (req, res) => {
     const { pin, index } = req.params;
     const record = activePins[pin];
