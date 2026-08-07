@@ -6,6 +6,10 @@ const fs = require('fs');
 const sharp = require('sharp');
 const libre = require('libreoffice-convert');
 const { PDFDocument } = require('pdf-lib');
+const { exec } = require('child_process');
+const util = require('util');
+const execPromise = util.promisify(exec);
+
 libre.convertAsync = require('util').promisify(libre.convert);
 
 const app = express();
@@ -50,7 +54,7 @@ app.post('/upload', upload.array('files', 10), (req, res) => {
     return res.json({ success: true, pin, fileCount: req.files.length, expiresInSeconds: 60 });
 });
 
-// 2. AirFormat Endpoint (Fixed Double-Dot Extension Bug)
+// 2. AirFormat Endpoint (Local PDF->DOCX + LibreOffice + Sharp Engines)
 app.post('/convert-cloud', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded.' });
@@ -60,10 +64,8 @@ app.post('/convert-cloud', upload.single('file'), async (req, res) => {
         const srcExt = path.extname(originalName).replace(/^\.+/, '').toLowerCase();
         
         let rawTarget = (req.body.targetFormat || 'pdf').toLowerCase().trim();
-        // Remove ALL leading dots sent by frontend
         rawTarget = rawTarget.replace(/^\.+/, '');
 
-        // Format mapping for LibreOffice compatibility
         const formatMap = {
             'doc': 'docx',
             'ppt': 'pptx',
@@ -78,7 +80,7 @@ app.post('/convert-cloud', upload.single('file'), async (req, res) => {
 
         const imageFormats = ['jpg', 'jpeg', 'png', 'webp'];
 
-        // Fast Local Image-to-Image Processing
+        // A. Image to Image Conversion (Sharp)
         if (imageFormats.includes(srcExt) && imageFormats.includes(cleanExt)) {
             let sharpInstance = sharp(inputPath);
             if (cleanExt === 'jpg' || cleanExt === 'jpeg') sharpInstance = sharpInstance.jpeg({ quality: 90 });
@@ -86,8 +88,9 @@ app.post('/convert-cloud', upload.single('file'), async (req, res) => {
             else if (cleanExt === 'webp') sharpInstance = sharpInstance.webp({ quality: 85 });
 
             await sharpInstance.toFile(outputPath);
+
+        // B. Image to PDF Conversion (PDFDocument)
         } else if (imageFormats.includes(srcExt) && cleanExt === 'pdf') {
-            // Image to PDF Direct Conversion
             const imgBytes = fs.readFileSync(inputPath);
             const pdfDoc = await PDFDocument.create();
             let img;
@@ -99,11 +102,20 @@ app.post('/convert-cloud', upload.single('file'), async (req, res) => {
 
             const pdfBytes = await pdfDoc.save();
             fs.writeFileSync(outputPath, pdfBytes);
-        } else {
-            // Complex Documents & Media via Local LibreOffice Engine (Pass clean extension)
+
+        // C. PDF to DOCX/DOC Conversion (Local python pdf2docx engine)
+        } else if (srcExt === 'pdf' && (cleanExt === 'docx' || cleanExt === 'doc')) {
+            const pythonCmd = `python3 -c "from pdf2docx import Converter; cv = Converter(r'${inputPath}'); cv.convert(r'${outputPath}'); cv.close()"`;
+            await execPromise(pythonCmd);
+
+        // D. DOCX / PPTX / XLSX / ODT / TXT to PDF Conversion (Local LibreOffice engine)
+        } else if (cleanExt === 'pdf') {
             const fileBuf = fs.readFileSync(inputPath);
-            const convertedBuf = await libre.convertAsync(fileBuf, cleanExt, undefined);
+            const convertedBuf = await libre.convertAsync(fileBuf, 'pdf', undefined);
             fs.writeFileSync(outputPath, convertedBuf);
+
+        } else {
+            return res.status(400).json({ success: false, message: `Conversion from .${srcExt} to .${cleanExt} is not supported.` });
         }
 
         fs.unlink(inputPath, () => {});
@@ -146,7 +158,6 @@ app.post('/compress-cloud', upload.single('file'), async (req, res) => {
 
             await sharpInstance.toFile(outputPath);
         } else {
-            // PDF & Document Compression via LibreOffice Engine
             const fileBuf = fs.readFileSync(inputPath);
             const convertedBuf = await libre.convertAsync(fileBuf, 'pdf', undefined);
             fs.writeFileSync(outputPath, convertedBuf);
