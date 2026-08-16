@@ -90,21 +90,56 @@
             gap: 10px;
         }
 
+        .brand-link {
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .brand-link:hover .animated-logo {
+            transform: scale(1.1);
+            filter: drop-shadow(0 0 16px rgba(0, 242, 254, 0.7));
+        }
+
+        .animated-logo {
+            width: 42px;
+            height: 42px;
+            display: inline-block;
+            vertical-align: middle;
+            filter: drop-shadow(0 0 10px rgba(0, 242, 254, 0.4));
+            transition: transform 0.3s ease;
+        }
+
         .brand {
-            font-size: 1.4rem;
+            font-size: 1.55rem;
             font-weight: 800;
             letter-spacing: -0.5px;
             color: var(--text-primary);
             display: flex;
             align-items: center;
-            gap: 6px;
             white-space: nowrap;
-            flex-shrink: 0;
         }
 
         .brand .highlight {
             color: var(--accent-color);
             text-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        @keyframes rotateOrbitCW {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes rotateOrbitCCW {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(-360deg); }
+        }
+
+        @keyframes pulseCore {
+            0% { transform: scale(0.94); filter: drop-shadow(0 0 2px #00f2fe); }
+            100% { transform: scale(1.05); filter: drop-shadow(0 0 8px #ec4899); }
         }
 
         .nav-right {
@@ -605,7 +640,7 @@
                 display: none;
             }
             .brand {
-                font-size: 1.25rem;
+                font-size: 1.3rem;
             }
             .feedback-form {
                 grid-template-columns: 1fr;
@@ -616,9 +651,39 @@
 <body>
 
     <nav class="navbar">
-        <a href="/" class="brand" style="text-decoration: none; display: flex; align-items: center;">
-    <img src="/assest/logo.svg" alt="AirShare Logo" style="height: 42px; width: auto;">
-</a>
+        <a href="/" class="brand-link">
+            <svg class="animated-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+                <defs>
+                    <linearGradient id="airGradNav" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#00f2fe" />
+                        <stop offset="50%" stop-color="#6366f1" />
+                        <stop offset="100%" stop-color="#ec4899" />
+                    </linearGradient>
+                </defs>
+                
+                <!-- Rotating AirShare Orbit 1 -->
+                <g style="transform-origin: 32px 32px; animation: rotateOrbitCW 7s linear infinite;">
+                    <ellipse cx="32" cy="32" rx="30" ry="12" fill="none" stroke="#00f2fe" stroke-width="2.5" stroke-dasharray="6 4" transform="rotate(-30 32 32)"/>
+                    <circle cx="58" cy="18" r="3" fill="#00f2fe"/>
+                </g>
+
+                <!-- Rotating AirShare Orbit 2 -->
+                <g style="transform-origin: 32px 32px; animation: rotateOrbitCCW 11s linear infinite;">
+                    <ellipse cx="32" cy="32" rx="30" ry="12" fill="none" stroke="url(#airGradNav)" stroke-width="2" transform="rotate(45 32 32)"/>
+                    <circle cx="6" cy="46" r="3" fill="#ec4899"/>
+                </g>
+
+                <!-- Diamond Core Shield & Fast-Share Arrow -->
+                <g style="transform-origin: 32px 32px; animation: pulseCore 2.5s ease-in-out infinite alternate;">
+                    <polygon points="32,8 54,32 32,56 10,32" fill="#09090b" stroke="url(#airGradNav)" stroke-width="3"/>
+                    <path d="M 32 44 L 32 20" stroke="#00ff88" stroke-width="4.5" stroke-linecap="round"/>
+                    <polyline points="23,28 32,18 41,28" fill="none" stroke="#00ff88" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+            </svg>
+            <div class="brand">
+                <span>air-share</span><span class="highlight">.markiv.site</span>
+            </div>
+        </a>
         <div class="nav-right">
             <span class="nav-badge"><i class="fa-solid fa-shield-halved" style="color: var(--accent-color);"></i> Encrypted Transfer</span>
             <button id="themeToggleBtn" class="theme-btn" onclick="toggleTheme()" aria-label="Toggle Theme">
