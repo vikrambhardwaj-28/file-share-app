@@ -1,44 +1,223 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AirCompress - Document & Image Compression</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
         :root {
-            --primary: #4f46e5; --primary-hover: #4338ca; --accent: #06b6d4; --purple-accent: #c084fc;
-            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
-            --card-bg: rgba(15, 23, 42, 0.65); --card-border: rgba(255, 255, 255, 0.12);
-            --text-main: #f8fafc; --text-muted: #94a3b8; --danger: #ef4444; --success: #10b981;
+            --bg-color: #050505;
+            --navbar-bg: rgba(5, 5, 5, 0.85);
+            --card-bg: rgba(18, 18, 22, 0.8);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1aa;
+            --accent-color: #6366f1;
+            --accent-hover: #4f46e5;
+            --accent-glow: rgba(99, 102, 241, 0.35);
+            --input-bg: rgba(24, 24, 27, 0.8);
+            --footer-bg: #09090b;
+            --danger: #ef4444;
+            --success: #10b981;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
-        body { background: var(--bg-gradient); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 20px 15px; }
-        .navbar { width: 100%; max-width: 900px; display: flex; justify-content: space-between; align-items: center; padding: 15px 0; margin-bottom: 10px; }
-        .brand { font-size: 1.5rem; font-weight: 800; background: linear-gradient(to right, #818cf8, #c084fc); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-        .wide-nav-bar { width: 100%; max-width: 900px; background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--card-border); border-radius: 16px; padding: 8px; display: flex; gap: 10px; margin-bottom: 24px; }
-        .nav-tab { flex: 1; text-align: center; padding: 12px 16px; border-radius: 12px; color: var(--text-muted); text-decoration: none; font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .nav-tab.active { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; box-shadow: 0 4px 15px rgba(79, 70, 229, 0.35); }
+        [data-theme="light"] {
+            --bg-color: #f8fafc;
+            --navbar-bg: rgba(255, 255, 255, 0.9);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --border-color: rgba(0, 0, 0, 0.12);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --accent-color: #4f46e5;
+            --accent-hover: #4338ca;
+            --accent-glow: rgba(79, 70, 229, 0.25);
+            --input-bg: #f1f5f9;
+            --footer-bg: #e2e8f0;
+            --danger: #dc2626;
+            --success: #059669;
+        }
 
-        .main-container { width: 100%; max-width: 900px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 40px; }
-        .card { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--card-border); border-radius: 20px; padding: 30px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); display: flex; flex-direction: column; justify-content: space-between; }
-        .card-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
-        .card-desc { font-size: 0.875rem; color: var(--text-muted); margin-bottom: 20px; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s, transform 0.2s, box-shadow 0.3s;
+        }
 
-        .drop-zone { border: 2px dashed rgba(255, 255, 255, 0.2); border-radius: 14px; padding: 24px; text-align: center; cursor: pointer; background: rgba(255, 255, 255, 0.02); margin-bottom: 12px; transition: all 0.3s ease; }
-        .drop-zone:hover { border-color: var(--accent); background: rgba(6, 182, 212, 0.08); }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 15px;
+        }
+
+        .navbar {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            margin-bottom: 10px;
+        }
+
+        .brand {
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand .highlight {
+            color: var(--accent-color);
+            text-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        .theme-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.5rem 0.9rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .wide-nav-bar {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 6px;
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .nav-tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px 16px;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.92rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            backdrop-filter: blur(8px);
+        }
+
+        .nav-tab:hover:not(.active) {
+            background: var(--input-bg);
+            color: var(--text-primary);
+            border-color: var(--accent-color);
+        }
+
+        .nav-tab.active {
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+            color: white;
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 900px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 26px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .card:hover {
+            border-color: rgba(99, 102, 241, 0.35);
+            box-shadow: 0 12px 35px var(--accent-glow);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-primary);
+        }
+
+        .card-desc {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            background: var(--input-bg);
+            margin-bottom: 14px;
+        }
+
+        .drop-zone:hover {
+            border-color: var(--accent-color);
+            background: rgba(99, 102, 241, 0.06);
+        }
+
+        .drop-zone i {
+            animation: floatIcon 3s ease-in-out infinite;
+        }
+
+        @keyframes floatIcon {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
         input[type="file"] { display: none; }
 
         /* Target Size Adjustment Box */
         .size-adjust-box {
             display: none;
-            background: rgba(0, 0, 0, 0.25);
-            border: 1px solid var(--card-border);
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
             border-radius: 12px;
             padding: 14px;
             margin-bottom: 16px;
@@ -48,7 +227,7 @@
             display: flex;
             justify-content: space-between;
             font-size: 0.82rem;
-            color: var(--text-muted);
+            color: var(--text-secondary);
             margin-bottom: 8px;
             font-weight: 600;
         }
@@ -57,26 +236,53 @@
             width: 100%;
             height: 6px;
             border-radius: 5px;
-            background: rgba(255, 255, 255, 0.15);
+            background: var(--card-bg);
             outline: none;
             cursor: pointer;
-            accent-color: var(--accent);
+            accent-color: var(--accent-color);
         }
 
-        .btn { width: 100%; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease; }
-        .btn:hover { opacity: 0.95; transform: scale(0.99); }
+        .btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+            color: white;
+            border: none;
+            padding: 13px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px var(--accent-glow);
+        }
 
         /* Glowing Spinner Animation */
-        .loader-box { display: none; flex-direction: column; align-items: center; justify-content: center; padding: 35px 10px; text-align: center; }
+        .loader-box {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 35px 10px;
+            text-align: center;
+        }
+
         .glowing-spinner {
             width: 50px;
             height: 50px;
-            border: 4px solid rgba(6, 182, 212, 0.15);
-            border-left-color: var(--accent);
-            border-top-color: var(--purple-accent);
+            border: 4px solid rgba(99, 102, 241, 0.15);
+            border-left-color: var(--accent-color);
+            border-top-color: #c084fc;
             border-radius: 50%;
             animation: spinGlow 0.8s linear infinite;
-            filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.6));
+            filter: drop-shadow(0 0 8px var(--accent-glow));
         }
 
         @keyframes spinGlow {
@@ -84,20 +290,91 @@
             100% { transform: rotate(360deg); }
         }
 
-        .result-box { display: none; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 14px; padding: 20px; text-align: center; margin-top: 15px; }
-        .pin-code { font-size: 2rem; font-weight: 800; letter-spacing: 6px; color: var(--success); margin: 6px 0; }
-        .timer-badge { font-size: 0.85rem; font-weight: 700; color: var(--danger); background: rgba(239, 68, 68, 0.15); padding: 6px 14px; border-radius: 20px; display: inline-block; }
+        .result-box {
+            display: none;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 15px;
+            animation: fadeInScale 0.3s ease-out;
+        }
 
-        footer { width: 100%; max-width: 900px; border-top: 1px solid var(--card-border); padding-top: 25px; display: flex; flex-direction: column; align-items: center; gap: 15px; text-align: center; }
-        .social-links { display: flex; gap: 20px; }
-        .social-icon { width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border); display: flex; align-items: center; justify-content: center; color: var(--text-main); font-size: 1.2rem; text-decoration: none; }
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .pin-code {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: 6px;
+            color: var(--success);
+            margin: 6px 0;
+            text-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .timer-badge {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--danger);
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 6px 14px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        footer {
+            width: 100%;
+            max-width: 900px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            text-align: center;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 16px;
+        }
+
+        .social-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            text-decoration: none;
+        }
+
+        .social-icon:hover {
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+            transform: scale(1.08);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
     </style>
 </head>
 <body>
 
     <nav class="navbar">
-        <div class="brand"><i class="fa-solid fa-bolt" style="color: var(--accent);"></i> AirShare</div>
-        <span style="font-size: 0.85rem; color: var(--text-muted);"><i class="fa-solid fa-shield-halved"></i> Encrypted Transfer</span>
+        <div class="brand"><i class="fa-solid fa-bolt highlight"></i> AirShare<span class="highlight">.site</span></div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 0.85rem; color: var(--text-secondary);"><i class="fa-solid fa-shield-halved" style="color: var(--accent-color);"></i> Encrypted Transfer</span>
+            <button id="themeToggleBtn" class="theme-btn" onclick="toggleTheme()" aria-label="Toggle Theme">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+        </div>
     </nav>
 
     <div class="wide-nav-bar">
@@ -110,12 +387,12 @@
         <!-- Left Compress Card -->
         <div class="card">
             <div>
-                <div class="card-title"><i class="fa-solid fa-file-zipper" style="color: var(--accent);"></i> Document & Image Compressor</div>
-                <p class="card-desc">Compress PDFs, PPTs, Word, Excel & Image files up to 80% without quality loss.</p>
+                <div class="card-title"><i class="fa-solid fa-file-zipper" style="color: var(--accent-color);"></i> Document &amp; Image Compressor</div>
+                <p class="card-desc">Compress PDFs, PPTs, Word, Excel &amp; Image files up to 80% without quality loss.</p>
 
                 <div class="drop-zone" onclick="document.getElementById('compFile').click()">
-                    <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: var(--accent);"></i>
-                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">Click or Drag file here</p>
+                    <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: var(--accent-color);"></i>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 6px;">Click or Drag file here</p>
                 </div>
                 <input type="file" id="compFile" onchange="handleCompressSelect(event)">
 
@@ -127,10 +404,10 @@
                 <div id="sizeAdjustBox" class="size-adjust-box">
                     <div class="size-slider-label">
                         <span>Target Compressed Size:</span>
-                        <span id="targetSizeLabel" style="color: var(--accent); font-weight: 700;">50%</span>
+                        <span id="targetSizeLabel" style="color: var(--accent-color); font-weight: 700;">50%</span>
                     </div>
                     <input type="range" id="sizeSlider" class="size-slider" min="10" max="90" value="50" oninput="updateTargetSizeLabel(this.value)">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted); margin-top: 6px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-secondary); margin-top: 6px;">
                         <span>Max Compression (~<span id="minApproxLabel">0 KB</span>)</span>
                         <span>Low Compression (~<span id="maxApproxLabel">0 KB</span>)</span>
                     </div>
@@ -148,14 +425,14 @@
             <!-- Loading Spinner Box -->
             <div id="loaderBox" class="loader-box">
                 <div class="glowing-spinner"></div>
-                <p style="margin-top: 16px; font-weight: 700; color: var(--text-main); font-size: 0.95rem;">Compressing file... Please wait</p>
-                <span style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">Optimizing file quality and size</span>
+                <p style="margin-top: 16px; font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">Compressing file... Please wait</p>
+                <span style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px;">Optimizing file quality and size</span>
             </div>
 
             <!-- Output Result Box -->
             <div id="resultBox" class="result-box">
-                <p style="font-size: 0.85rem; color: var(--text-muted);">BEFORE COMPRESS: <span id="resBeforeSize" style="color:white; font-weight:bold;">0 KB</span></p>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">AFTER COMPRESS: <span id="resAfterSize" style="color:var(--success); font-weight:bold;">0 KB</span></p>
+                <p style="font-size: 0.85rem; color: var(--text-secondary);">BEFORE COMPRESS: <span id="resBeforeSize" style="color: var(--text-primary); font-weight:bold;">0 KB</span></p>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">AFTER COMPRESS: <span id="resAfterSize" style="color: var(--success); font-weight:bold;">0 KB</span></p>
 
                 <div style="margin-top: 15px;">
                     <a id="directDownloadBtn" href="#" download class="btn" style="background: linear-gradient(135deg, #10b981, #059669); text-decoration: none;">
@@ -163,17 +440,17 @@
                     </a>
                 </div>
 
-                <div style="margin-top: 15px; border-top: 1px dashed var(--card-border); padding-top: 15px;">
-                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">SHARE PIN</span>
+                <div style="margin-top: 15px; border-top: 1px dashed var(--border-color); padding-top: 15px;">
+                    <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 700;">SHARE PIN</span>
                     <div id="pinDisplay" class="pin-code">------</div>
-                    <div style="background:white; padding:10px; border-radius:10px; display:inline-block; margin:8px 0;">
+                    <div style="background: #ffffff; padding: 10px; border-radius: 10px; display: inline-block; margin: 8px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
                         <div id="qrcode"></div>
                     </div>
                     <div><span id="timerDisplay" class="timer-badge">Expiring in 60s</span></div>
                 </div>
             </div>
 
-            <div id="emptyPlaceholder" style="text-align: center; padding: 40px 10px; color: var(--text-muted); font-size: 0.85rem;">
+            <div id="emptyPlaceholder" style="text-align: center; padding: 40px 10px; color: var(--text-secondary); font-size: 0.85rem;">
                 Upload a file and click "Compress File Now".
             </div>
         </div>
@@ -185,13 +462,23 @@
             <a href="https://www.facebook.com/share/196jZuggxg/" target="_blank" class="social-icon"><i class="fa-brands fa-facebook-f"></i></a>
             <a href="mailto:vikram.2872006@gmail.com" class="social-icon"><i class="fa-solid fa-envelope"></i></a>
         </div>
-        <p style="font-size: 0.85rem; color: var(--text-muted);">Designed & Developed by <strong>Vikram Bhardwaj</strong></p>
+        <p style="font-size: 0.85rem; color: var(--text-secondary);">Designed &amp; Developed by <strong>Vikram Bhardwaj</strong></p>
     </footer>
 
     <script>
         let selectedFile = null;
         let countdownInterval;
-        let compressController = null; // Auto-abort active request on new selection
+        let compressController = null;
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+
+            const icon = document.querySelector('#themeToggleBtn i');
+            icon.className = newTheme === 'dark' ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+        }
 
         function formatBytes(bytes) {
             if (bytes === 0) return '0 Bytes';
@@ -207,7 +494,6 @@
                 document.getElementById('originalSizeInfo').style.display = 'block';
                 document.getElementById('origSizeValue').innerText = formatBytes(selectedFile.size);
                 
-                // Show Target Size Adjuster
                 document.getElementById('sizeAdjustBox').style.display = 'block';
                 updateTargetSizeLabel(document.getElementById('sizeSlider').value);
             }
@@ -229,17 +515,14 @@
             const loaderBox = document.getElementById('loaderBox');
             const targetRatio = document.getElementById('sizeSlider').value;
 
-            // 1. CANCEL ONGOING PREVIOUS PROCESS IF RUNNING
             if (compressController) {
                 compressController.abort();
                 console.log('Previous compression process cancelled.');
             }
 
-            // 2. CREATE NEW CONTROLLER FOR THIS REQUEST
             compressController = new AbortController();
             const { signal } = compressController;
 
-            // 3. UI STATE UPDATE
             emptyPlaceholder.style.display = 'none';
             resultBox.style.display = 'none';
             loaderBox.style.display = 'flex';
@@ -256,8 +539,6 @@
                 });
 
                 const data = await res.json();
-
-                // Hide Spinner
                 loaderBox.style.display = 'none';
 
                 if (data.success) {

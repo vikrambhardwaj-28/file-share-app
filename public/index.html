@@ -1,111 +1,579 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AirShare - Secure File Transfer</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
 
     <style>
         :root {
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --accent: #06b6d4;
-            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
-            --card-bg: rgba(15, 23, 42, 0.65);
-            --card-border: rgba(255, 255, 255, 0.12);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
+            --bg-color: #050505;
+            --navbar-bg: rgba(5, 5, 5, 0.85);
+            --card-bg: rgba(18, 18, 22, 0.8);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1aa;
+            --accent-color: #6366f1;
+            --accent-hover: #4f46e5;
+            --accent-glow: rgba(99, 102, 241, 0.35);
+            --input-bg: rgba(24, 24, 27, 0.8);
+            --footer-bg: #09090b;
             --danger: #ef4444;
             --success: #10b981;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
-
-        body {
-            background: var(--bg-gradient); color: var(--text-main);
-            min-height: 100vh; display: flex; flex-direction: column;
-            align-items: center; justify-content: space-between; padding: 20px 15px;
+        [data-theme="light"] {
+            --bg-color: #f8fafc;
+            --navbar-bg: rgba(255, 255, 255, 0.9);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --border-color: rgba(0, 0, 0, 0.12);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --accent-color: #4f46e5;
+            --accent-hover: #4338ca;
+            --accent-glow: rgba(79, 70, 229, 0.25);
+            --input-bg: #f1f5f9;
+            --footer-bg: #e2e8f0;
+            --danger: #dc2626;
+            --success: #059669;
         }
 
-        .navbar { width: 100%; max-width: 900px; display: flex; justify-content: space-between; align-items: center; padding: 15px 0; margin-bottom: 10px; }
-        .brand { font-size: 1.5rem; font-weight: 800; background: linear-gradient(to right, #818cf8, #c084fc); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s, transform 0.2s, box-shadow 0.3s;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 15px;
+        }
+
+        .navbar {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            margin-bottom: 10px;
+        }
+
+        .brand {
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand .highlight {
+            color: var(--accent-color);
+            text-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        .theme-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.5rem 0.9rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
 
         .wide-nav-bar {
-            width: 100%; max-width: 900px; background: var(--card-bg);
-            backdrop-filter: blur(20px); border: 1px solid var(--card-border);
-            border-radius: 16px; padding: 8px; display: flex; gap: 10px; margin-bottom: 24px;
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 6px;
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
         }
 
         .nav-tab {
-            flex: 1; text-align: center; padding: 12px 16px; border-radius: 12px;
-            color: var(--text-muted); text-decoration: none; font-weight: 600; font-size: 0.95rem;
-            display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease;
+            flex: 1;
+            text-align: center;
+            padding: 10px 16px;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.92rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            backdrop-filter: blur(8px);
         }
 
-        .nav-tab:hover:not(.active) { background: rgba(255, 255, 255, 0.08); color: var(--text-main); }
-        .nav-tab.active { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; box-shadow: 0 4px 15px rgba(79, 70, 229, 0.35); }
+        .nav-tab:hover:not(.active) {
+            background: var(--input-bg);
+            color: var(--text-primary);
+            border-color: var(--accent-color);
+        }
 
-        .main-container { width: 100%; max-width: 900px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 40px; }
-        .card { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--card-border); border-radius: 20px; padding: 30px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); }
-        .card-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
-        .card-desc { font-size: 0.875rem; color: var(--text-muted); margin-bottom: 20px; }
+        .nav-tab.active {
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+            color: white;
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
 
-        .drop-zone { border: 2px dashed rgba(255, 255, 255, 0.2); border-radius: 14px; padding: 24px; text-align: center; cursor: pointer; background: rgba(255, 255, 255, 0.02); margin-bottom: 12px; }
-        .drop-zone:hover { border-color: var(--primary); background: rgba(79, 70, 229, 0.08); }
+        .main-container {
+            width: 100%;
+            max-width: 900px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 30px;
+        }
 
-        .file-list { margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto; }
-        .file-item { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border); border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
+        .card {
+            background-color: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 26px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
 
-        .add-more-btn { background: transparent; border: 1px dashed var(--accent); color: var(--accent); padding: 8px; border-radius: 8px; width: 100%; cursor: pointer; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .card:hover {
+            border-color: rgba(99, 102, 241, 0.35);
+            box-shadow: 0 12px 35px var(--accent-glow);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-primary);
+        }
+
+        .card-desc {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            background: var(--input-bg);
+            margin-bottom: 14px;
+        }
+
+        .drop-zone:hover {
+            border-color: var(--accent-color);
+            background: rgba(99, 102, 241, 0.06);
+        }
+
+        .drop-zone i {
+            animation: floatIcon 3s ease-in-out infinite;
+        }
+
+        @keyframes floatIcon {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
+        .file-list {
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 9px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+
+        .add-more-btn {
+            background: transparent;
+            border: 1px dashed var(--accent-color);
+            color: var(--accent-color);
+            padding: 9px;
+            border-radius: 8px;
+            width: 100%;
+            cursor: pointer;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 0.88rem;
+        }
+
+        .add-more-btn:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
         input[type="file"] { display: none; }
 
-        .btn { width: 100%; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn:hover { opacity: 0.95; transform: scale(0.99); }
+        .btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+            color: white;
+            border: none;
+            padding: 13px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
 
-        .progress-wrapper { display: none; margin-bottom: 16px; }
-        .progress-bar-bg { width: 100%; height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 10px; overflow: hidden; margin-top: 6px; }
-        .progress-bar-fill { width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--primary)); transition: width 0.2s ease; }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px var(--accent-glow);
+        }
 
-        .pin-input-group input { width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--card-border); border-radius: 12px; padding: 16px; color: var(--text-main); font-size: 1.2rem; letter-spacing: 4px; text-align: center; outline: none; margin-bottom: 16px; }
-        .pin-display-box { display: none; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 14px; padding: 20px; text-align: center; margin-top: 16px; }
-        .pin-code { font-size: 2.2rem; font-weight: 800; letter-spacing: 8px; color: var(--success); margin: 8px 0; }
+        .btn-alt {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            box-shadow: none;
+        }
 
-        .timer-badge { font-size: 0.85rem; font-weight: 700; color: var(--danger); background: rgba(239, 68, 68, 0.15); padding: 6px 14px; border-radius: 20px; display: inline-block; animation: pulseRing 1.5s infinite; }
-        @keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        .btn-alt:hover {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
 
-        .quick-action-btns { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
-        .action-chip { background: rgba(255, 255, 255, 0.08); border: 1px solid var(--card-border); color: var(--text-main); padding: 6px 12px; border-radius: 8px; font-size: 0.78rem; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+        .progress-wrapper {
+            display: none;
+            margin-bottom: 16px;
+        }
 
-        .qr-wrapper { background: #ffffff; padding: 12px; border-radius: 12px; display: inline-block; margin: 12px 0; }
-        .scanner-container { display: none; margin-top: 16px; border-radius: 12px; overflow: hidden; border: 1px solid var(--card-border); }
-        .error-banner { display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger); color: #fca5a5; padding: 12px; border-radius: 10px; font-size: 0.85rem; margin-top: 12px; text-align: center; }
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
 
-        .retrieved-files-box { display: none; margin-top: 16px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--card-border); border-radius: 12px; padding: 15px; }
-        .retrieved-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(0, 0, 0, 0.2); border-radius: 8px; margin-top: 8px; font-size: 0.85rem; }
-        .retrieved-item a { color: var(--accent); text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+        .progress-bar-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #818cf8, var(--accent-color));
+            transition: width 0.2s ease;
+        }
 
-        .feedback-section { width: 100%; max-width: 900px; background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--card-border); border-radius: 20px; padding: 25px 30px; margin-bottom: 40px; }
-        .feedback-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+        .pin-input-group input {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 14px;
+            color: var(--text-primary);
+            font-size: 1.2rem;
+            letter-spacing: 4px;
+            text-align: center;
+            outline: none;
+            margin-bottom: 16px;
+        }
+
+        .pin-input-group input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        .pin-display-box {
+            display: none;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 16px;
+            animation: fadeInScale 0.3s ease-out;
+        }
+
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .pin-code {
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: 8px;
+            color: var(--success);
+            margin: 8px 0;
+            text-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .timer-badge {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--danger);
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 6px 14px;
+            border-radius: 20px;
+            display: inline-block;
+            animation: pulseRing 1.5s infinite;
+        }
+
+        @keyframes pulseRing {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .quick-action-btns {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 12px;
+        }
+
+        .action-chip {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .action-chip:hover {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .qr-wrapper {
+            background: #ffffff;
+            padding: 12px;
+            border-radius: 12px;
+            display: inline-block;
+            margin: 12px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .scanner-container {
+            display: none;
+            margin-top: 16px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            background: var(--input-bg);
+        }
+
+        .error-banner {
+            display: none;
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid var(--danger);
+            color: #fca5a5;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        .retrieved-files-box {
+            display: none;
+            margin-top: 16px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .retrieved-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-top: 8px;
+            font-size: 0.85rem;
+        }
+
+        .retrieved-item a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .retrieved-item a:hover {
+            text-decoration: underline;
+        }
+
+        .feedback-section {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 26px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .feedback-section:hover {
+            border-color: rgba(99, 102, 241, 0.35);
+        }
+
+        .feedback-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
         @media (max-width: 600px) { .feedback-form { grid-template-columns: 1fr; } }
-        .feedback-form input, .feedback-form textarea { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px; color: white; outline: none; }
-        .feedback-form textarea { grid-column: 1 / -1; resize: none; height: 80px; }
-        .feedback-form button { grid-column: 1 / -1; background: rgba(255,255,255,0.1); border: 1px solid var(--card-border); color: white; padding: 12px; border-radius: 10px; cursor: pointer; }
 
-        footer { width: 100%; max-width: 900px; border-top: 1px solid var(--card-border); padding-top: 25px; display: flex; flex-direction: column; align-items: center; gap: 15px; text-align: center; }
-        .social-links { display: flex; gap: 20px; }
-        .social-icon { width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border); display: flex; align-items: center; justify-content: center; color: var(--text-main); font-size: 1.2rem; text-decoration: none; }
+        .feedback-form input, .feedback-form textarea {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 12px;
+            color: var(--text-primary);
+            outline: none;
+            font-size: 0.92rem;
+        }
+
+        .feedback-form input:focus, .feedback-form textarea:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        .feedback-form textarea {
+            grid-column: 1 / -1;
+            resize: none;
+            height: 80px;
+        }
+
+        .feedback-form button {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+            border: none;
+            color: white;
+            padding: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+
+        .feedback-form button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px var(--accent-glow);
+        }
+
+        footer {
+            width: 100%;
+            max-width: 900px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            text-align: center;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 16px;
+        }
+
+        .social-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            text-decoration: none;
+        }
+
+        .social-icon:hover {
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+            transform: scale(1.08);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
     </style>
 </head>
 <body>
 
     <nav class="navbar">
-        <div class="brand"><i class="fa-solid fa-bolt" style="color: var(--accent);"></i> AirShare</div>
-        <span style="font-size: 0.85rem; color: var(--text-muted);"><i class="fa-solid fa-shield-halved"></i> Encrypted Transfer</span>
+        <div class="brand"><i class="fa-solid fa-bolt highlight"></i> AirShare.<span class="highlight">markiv.site</span></div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 0.85rem; color: var(--text-secondary);"><i class="fa-solid fa-shield-halved" style="color: var(--accent-color);"></i> Encrypted Transfer</span>
+            <button id="themeToggleBtn" class="theme-btn" onclick="toggleTheme()" aria-label="Toggle Theme">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+        </div>
     </nav>
 
     <div class="wide-nav-bar">
@@ -116,12 +584,12 @@
 
     <div class="main-container">
         <div class="card">
-            <div class="card-title"><i class="fa-solid fa-paper-plane" style="color: var(--accent);"></i> Send Files</div>
-            <p class="card-desc">Upload files to generate a 60-second security PIN & QR Code.</p>
+            <div class="card-title"><i class="fa-solid fa-paper-plane" style="color: var(--accent-color);"></i> Send Files</div>
+            <p class="card-desc">Upload files to generate a 60-second security PIN &amp; QR Code.</p>
 
             <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
-                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: var(--accent);"></i>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">Click or Drag files here</p>
+                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: var(--accent-color);"></i>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 6px;">Click or Drag files here</p>
             </div>
             <input type="file" id="fileInput" multiple onchange="handleFileSelect(event)">
 
@@ -129,34 +597,34 @@
             <button id="addMoreBtn" class="add-more-btn" style="display: none;" onclick="document.getElementById('fileInput').click()"><i class="fa-solid fa-plus"></i> Add More Files</button>
 
             <div id="progressWrapper" class="progress-wrapper">
-                <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary);">
                     <span>Uploading...</span><span id="uploadPercent">0%</span>
                 </div>
                 <div class="progress-bar-bg"><div id="progressBarFill" class="progress-bar-fill"></div></div>
             </div>
 
-            <button class="btn" onclick="uploadFiles()"><i class="fa-solid fa-key"></i> Generate Security PIN & QR</button>
+            <button class="btn" onclick="uploadFiles()"><i class="fa-solid fa-key"></i> Generate Security PIN &amp; QR</button>
 
             <div id="pinBox" class="pin-display-box">
-                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">YOUR 6-DIGIT PIN</span>
+                <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 700;">YOUR 6-DIGIT PIN</span>
                 <div id="pinDisplay" class="pin-code">------</div>
                 <div class="quick-action-btns">
                     <button class="action-chip" onclick="copyPin()"><i class="fa-regular fa-copy"></i> Copy PIN</button>
                     <button class="action-chip" onclick="shareLink()"><i class="fa-solid fa-share-nodes"></i> Share Link</button>
                 </div>
                 <div class="qr-wrapper"><div id="qrcode"></div></div>
-                <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;">Scan QR Code to download directly</p>
+                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 8px;">Scan QR Code to download directly</p>
                 <div id="timerDisplay" class="timer-badge">Expiring in 60s</div>
             </div>
         </div>
 
         <div class="card">
-            <div class="card-title"><i class="fa-solid fa-download" style="color: var(--primary);"></i> Download Files</div>
+            <div class="card-title"><i class="fa-solid fa-download" style="color: var(--accent-color);"></i> Download Files</div>
             <p class="card-desc">Enter 6-digit PIN or scan QR Code to download.</p>
             <div class="pin-input-group"><input type="text" id="pinInput" placeholder="ENTER 6-DIGIT PIN" maxlength="6" autocomplete="off"></div>
 
-            <button class="btn" style="background: linear-gradient(135deg, #06b6d4, #0284c7);" onclick="downloadFile()"><i class="fa-solid fa-circle-down"></i> Retrieve Files</button>
-            <button class="btn" style="background: rgba(255,255,255,0.1); border: 1px solid var(--card-border); margin-top: 10px;" onclick="toggleQrScanner()"><i class="fa-solid fa-qrcode"></i> Scan QR Code</button>
+            <button class="btn" onclick="downloadFile()"><i class="fa-solid fa-circle-down"></i> Retrieve Files</button>
+            <button class="btn btn-alt" style="margin-top: 10px;" onclick="toggleQrScanner()"><i class="fa-solid fa-qrcode"></i> Scan QR Code</button>
 
             <div id="reader" class="scanner-container"></div>
             <div id="downloadError" class="error-banner"></div>
@@ -169,7 +637,7 @@
     </div>
 
     <div class="feedback-section">
-        <div class="card-title"><i class="fa-solid fa-comments" style="color: #c084fc;"></i> Send Us Your Feedback</div>
+        <div class="card-title"><i class="fa-solid fa-comments" style="color: var(--accent-color);"></i> Send Us Your Feedback</div>
         <p class="card-desc">Have suggestions or facing issues? Let us know below.</p>
         <form class="feedback-form" onsubmit="alert('Feedback submitted!'); return false;">
             <input type="text" placeholder="Your Name" required>
@@ -185,7 +653,7 @@
             <a href="https://www.facebook.com/share/196jZuggxg/" target="_blank" class="social-icon"><i class="fa-brands fa-facebook-f"></i></a>
             <a href="mailto:vikram.2872006@gmail.com" class="social-icon"><i class="fa-solid fa-envelope"></i></a>
         </div>
-        <p style="font-size: 0.85rem; color: var(--text-muted);">Designed & Developed by <strong>Vikram Bhardwaj</strong></p>
+        <p style="font-size: 0.85rem; color: var(--text-secondary);">Designed &amp; Developed by <strong>Vikram Bhardwaj</strong></p>
     </footer>
 
     <script>
@@ -193,6 +661,16 @@
         let countdownInterval;
         let html5QrcodeScanner = null;
         let currentGeneratedPin = '';
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+
+            const icon = document.querySelector('#themeToggleBtn i');
+            icon.className = newTheme === 'dark' ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+        }
 
         function playSound(type) {
             try {

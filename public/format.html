@@ -1,57 +1,296 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AirFormat - Universal File Converter</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
         :root {
-            --primary: #4f46e5; --primary-hover: #4338ca; --accent: #06b6d4; --purple-accent: #c084fc;
-            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
-            --card-bg: rgba(15, 23, 42, 0.65); --card-border: rgba(255, 255, 255, 0.12);
-            --text-main: #f8fafc; --text-muted: #94a3b8; --danger: #ef4444; --success: #10b981; --warning: #f59e0b;
+            --bg-color: #050505;
+            --navbar-bg: rgba(5, 5, 5, 0.85);
+            --card-bg: rgba(18, 18, 22, 0.8);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1aa;
+            --accent-color: #6366f1;
+            --accent-hover: #4f46e5;
+            --accent-glow: rgba(99, 102, 241, 0.35);
+            --input-bg: rgba(24, 24, 27, 0.8);
+            --footer-bg: #09090b;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
-        body { background: var(--bg-gradient); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 20px 15px; }
-        .navbar { width: 100%; max-width: 900px; display: flex; justify-content: space-between; align-items: center; padding: 15px 0; margin-bottom: 10px; }
-        .brand { font-size: 1.5rem; font-weight: 800; background: linear-gradient(to right, #818cf8, #c084fc); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-        .wide-nav-bar { width: 100%; max-width: 900px; background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--card-border); border-radius: 16px; padding: 8px; display: flex; gap: 10px; margin-bottom: 24px; }
-        .nav-tab { flex: 1; text-align: center; padding: 12px 16px; border-radius: 12px; color: var(--text-muted); text-decoration: none; font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .nav-tab.active { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; box-shadow: 0 4px 15px rgba(79, 70, 229, 0.35); }
+        [data-theme="light"] {
+            --bg-color: #f8fafc;
+            --navbar-bg: rgba(255, 255, 255, 0.9);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --border-color: rgba(0, 0, 0, 0.12);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --accent-color: #4f46e5;
+            --accent-hover: #4338ca;
+            --accent-glow: rgba(79, 70, 229, 0.25);
+            --input-bg: #f1f5f9;
+            --footer-bg: #e2e8f0;
+            --danger: #dc2626;
+            --success: #059669;
+            --warning: #d97706;
+        }
 
-        .main-container { width: 100%; max-width: 900px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 24px; }
-        .card { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--card-border); border-radius: 20px; padding: 30px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); display: flex; flex-direction: column; justify-content: space-between; }
-        .card-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
-        .card-desc { font-size: 0.875rem; color: var(--text-muted); margin-bottom: 20px; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s, transform 0.2s, box-shadow 0.3s;
+        }
 
-        .drop-zone { border: 2px dashed rgba(255, 255, 255, 0.2); border-radius: 14px; padding: 24px; text-align: center; cursor: pointer; background: rgba(255, 255, 255, 0.02); margin-bottom: 12px; transition: all 0.3s ease; }
-        .drop-zone:hover { border-color: var(--purple-accent); background: rgba(192, 132, 252, 0.08); }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 15px;
+        }
+
+        .navbar {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            margin-bottom: 10px;
+        }
+
+        .brand {
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand .highlight {
+            color: var(--accent-color);
+            text-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        .theme-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.5rem 0.9rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .wide-nav-bar {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 6px;
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .nav-tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px 16px;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.92rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            backdrop-filter: blur(8px);
+        }
+
+        .nav-tab:hover:not(.active) {
+            background: var(--input-bg);
+            color: var(--text-primary);
+            border-color: var(--accent-color);
+        }
+
+        .nav-tab.active {
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+            color: white;
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 900px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 26px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .card:hover {
+            border-color: rgba(99, 102, 241, 0.35);
+            box-shadow: 0 12px 35px var(--accent-glow);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-primary);
+        }
+
+        .card-desc {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            background: var(--input-bg);
+            margin-bottom: 14px;
+        }
+
+        .drop-zone:hover {
+            border-color: var(--accent-color);
+            background: rgba(99, 102, 241, 0.06);
+        }
+
+        .drop-zone i {
+            animation: floatIcon 3s ease-in-out infinite;
+        }
+
+        @keyframes floatIcon {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
         input[type="file"] { display: none; }
 
-        .format-select-box { background: rgba(0, 0, 0, 0.2); border: 1px solid var(--card-border); padding: 12px; border-radius: 10px; margin-bottom: 15px; }
-        .format-select-box select { width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border); color: white; padding: 10px; border-radius: 6px; outline: none; font-weight: 600; }
-        .format-select-box select option { background: #0f172a; color: white; }
+        .format-select-box {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
 
-        .btn { width: 100%; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease; }
-        .btn:hover { opacity: 0.95; transform: scale(0.99); }
-        
+        .format-select-box select {
+            width: 100%;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 10px;
+            border-radius: 8px;
+            outline: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .format-select-box select:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        .format-select-box select option {
+            background: var(--card-bg);
+            color: var(--text-primary);
+        }
+
+        .format-select-box select optgroup {
+            background: var(--input-bg);
+            color: var(--accent-color);
+        }
+
+        .btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+            color: white;
+            border: none;
+            padding: 13px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px var(--accent-glow);
+        }
+
         /* Processing Animation Loader */
-        .loader-box { display: none; flex-direction: column; align-items: center; justify-content: center; padding: 35px 10px; text-align: center; }
+        .loader-box {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 35px 10px;
+            text-align: center;
+        }
+
         .glowing-spinner {
             width: 50px;
             height: 50px;
-            border: 4px solid rgba(192, 132, 252, 0.15);
-            border-left-color: var(--purple-accent);
-            border-top-color: var(--accent);
+            border: 4px solid rgba(99, 102, 241, 0.15);
+            border-left-color: var(--accent-color);
+            border-top-color: #c084fc;
             border-radius: 50%;
             animation: spinGlow 0.8s linear infinite;
-            filter: drop-shadow(0 0 8px rgba(192, 132, 252, 0.6));
+            filter: drop-shadow(0 0 8px var(--accent-glow));
         }
 
         @keyframes spinGlow {
@@ -59,28 +298,141 @@
             100% { transform: rotate(360deg); }
         }
 
-        .result-box { display: none; background: rgba(192, 132, 252, 0.08); border: 1px solid rgba(192, 132, 252, 0.3); border-radius: 14px; padding: 20px; text-align: center; margin-top: 15px; }
-        .pin-code { font-size: 2rem; font-weight: 800; letter-spacing: 6px; color: var(--success); margin: 6px 0; }
-        .timer-badge { font-size: 0.85rem; font-weight: 700; color: var(--danger); background: rgba(239, 68, 68, 0.15); padding: 6px 14px; border-radius: 20px; display: inline-block; }
+        .result-box {
+            display: none;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 15px;
+            animation: fadeInScale 0.3s ease-out;
+        }
 
-        .disclaimer-section { width: 100%; max-width: 900px; background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); border-radius: 16px; padding: 20px 25px; margin-bottom: 30px; }
-        .disclaimer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 12px; }
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .pin-code {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: 6px;
+            color: var(--success);
+            margin: 6px 0;
+            text-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .timer-badge {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--danger);
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 6px 14px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .disclaimer-section {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .disclaimer-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 12px;
+        }
+
         @media (max-width: 600px) { .disclaimer-grid { grid-template-columns: 1fr; } }
-        .disclaimer-item h4 { font-size: 0.9rem; color: var(--accent); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
-        .disclaimer-item ul { list-style: none; font-size: 0.8rem; color: var(--text-muted); }
-        .disclaimer-item ul li { margin-bottom: 4px; position: relative; padding-left: 12px; }
-        .disclaimer-item ul li::before { content: "•"; position: absolute; left: 0; color: var(--primary); }
 
-        footer { width: 100%; max-width: 900px; border-top: 1px solid var(--card-border); padding-top: 25px; display: flex; flex-direction: column; align-items: center; gap: 15px; text-align: center; }
-        .social-links { display: flex; gap: 20px; }
-        .social-icon { width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border); display: flex; align-items: center; justify-content: center; color: var(--text-main); font-size: 1.2rem; text-decoration: none; }
+        .disclaimer-item h4 {
+            font-size: 0.9rem;
+            color: var(--accent-color);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .disclaimer-item ul {
+            list-style: none;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+
+        .disclaimer-item ul li {
+            margin-bottom: 5px;
+            position: relative;
+            padding-left: 14px;
+            line-height: 1.4;
+        }
+
+        .disclaimer-item ul li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--accent-color);
+        }
+
+        footer {
+            width: 100%;
+            max-width: 900px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            text-align: center;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 16px;
+        }
+
+        .social-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            text-decoration: none;
+        }
+
+        .social-icon:hover {
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+            transform: scale(1.08);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
     </style>
 </head>
 <body>
 
     <nav class="navbar">
-        <div class="brand"><i class="fa-solid fa-bolt" style="color: var(--accent);"></i> AirShare</div>
-        <span style="font-size: 0.85rem; color: var(--text-muted);"><i class="fa-solid fa-shield-halved"></i> Encrypted Transfer</span>
+        <div class="brand"><i class="fa-solid fa-bolt highlight"></i> AirShare<span class="highlight">.site</span></div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 0.85rem; color: var(--text-secondary);"><i class="fa-solid fa-shield-halved" style="color: var(--accent-color);"></i> Encrypted Transfer</span>
+            <button id="themeToggleBtn" class="theme-btn" onclick="toggleTheme()" aria-label="Toggle Theme">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+        </div>
     </nav>
 
     <div class="wide-nav-bar">
@@ -93,21 +445,21 @@
         <!-- Left Converter Input -->
         <div class="card">
             <div>
-                <div class="card-title"><i class="fa-solid fa-file-code" style="color: #c084fc;"></i> Format Converter</div>
+                <div class="card-title"><i class="fa-solid fa-file-code" style="color: var(--accent-color);"></i> Format Converter</div>
                 <p class="card-desc">Select target format extension for high-precision conversion.</p>
 
                 <div class="drop-zone" onclick="document.getElementById('fmtFile').click()">
-                    <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: #c084fc;"></i>
-                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">Click or Drag file to convert</p>
+                    <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: var(--accent-color);"></i>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 6px;">Click or Drag file to convert</p>
                 </div>
                 <input type="file" id="fmtFile" onchange="handleFormatSelect(event)">
 
-                <div id="selectedFileInfo" style="display:none; font-size: 0.85rem; margin-bottom: 12px; color: var(--accent);">
-                    Selected File: <strong id="fmtFileName">none</strong>
+                <div id="selectedFileInfo" style="display:none; font-size: 0.85rem; margin-bottom: 12px; color: var(--accent-color);">
+                    Selected File: <strong id="fmtFileName" style="color: var(--text-primary);">none</strong>
                 </div>
 
                 <div class="format-select-box">
-                    <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px;">Convert To Target Format:</label>
+                    <label style="font-size: 0.8rem; color: var(--text-secondary); display: block; margin-bottom: 6px;">Convert To Target Format:</label>
                     <select id="targetFormatSelect">
                         <optgroup label="Document & Presentation Formats">
                             <option value="pdf">PDF Document (.pdf)</option>
@@ -132,7 +484,7 @@
                 </div>
             </div>
 
-            <button class="btn" style="background: linear-gradient(135deg, #c084fc, #9333ea);" onclick="startCloudConversion()">
+            <button class="btn" onclick="startCloudConversion()">
                 <i class="fa-solid fa-rotate"></i> Convert Format Now
             </button>
         </div>
@@ -145,13 +497,13 @@
             <!-- Loading Spinner Animation -->
             <div id="loaderBox" class="loader-box">
                 <div class="glowing-spinner"></div>
-                <p style="margin-top: 16px; font-weight: 700; color: var(--text-main); font-size: 0.95rem;">Converting file... Please wait</p>
-                <span style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">Large files may take a few seconds</span>
+                <p style="margin-top: 16px; font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">Converting file... Please wait</p>
+                <span style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px;">Large files may take a few seconds</span>
             </div>
 
             <!-- Output Result Box -->
             <div id="resultBox" class="result-box">
-                <p style="font-size: 0.85rem; color: var(--text-muted);">TARGET FORMAT: <span id="resTargetFmt" style="color:white; font-weight:bold; text-transform:uppercase;">PDF</span></p>
+                <p style="font-size: 0.85rem; color: var(--text-secondary);">TARGET FORMAT: <span id="resTargetFmt" style="color: var(--text-primary); font-weight:bold; text-transform:uppercase;">PDF</span></p>
 
                 <div style="margin-top: 15px;">
                     <a id="directDownloadBtn" href="#" download class="btn" style="background: linear-gradient(135deg, #10b981, #059669); text-decoration: none;">
@@ -159,17 +511,17 @@
                     </a>
                 </div>
 
-                <div style="margin-top: 15px; border-top: 1px dashed var(--card-border); padding-top: 15px;">
-                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">SHARE PIN</span>
+                <div style="margin-top: 15px; border-top: 1px dashed var(--border-color); padding-top: 15px;">
+                    <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 700;">SHARE PIN</span>
                     <div id="pinDisplay" class="pin-code">------</div>
-                    <div style="background:white; padding:10px; border-radius:10px; display:inline-block; margin:8px 0;">
+                    <div style="background: #ffffff; padding: 10px; border-radius: 10px; display: inline-block; margin: 8px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
                         <div id="qrcode"></div>
                     </div>
                     <div><span id="timerDisplay" class="timer-badge">Expiring in 60s</span></div>
                 </div>
             </div>
 
-            <div id="emptyPlaceholder" style="text-align: center; padding: 40px 10px; color: var(--text-muted); font-size: 0.85rem;">
+            <div id="emptyPlaceholder" style="text-align: center; padding: 40px 10px; color: var(--text-secondary); font-size: 0.85rem;">
                 Upload a file, choose a target format, and click "Convert Format Now".
             </div>
         </div>
@@ -177,12 +529,12 @@
 
     <!-- Supported Conversion Matrix & Disclaimer Guide -->
     <div class="disclaimer-section">
-        <div style="font-weight: 700; font-size: 0.95rem; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
-            <i class="fa-solid fa-circle-info" style="color: var(--accent);"></i> Supported Conversions Matrix
+        <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-circle-info" style="color: var(--accent-color);"></i> Supported Conversions Matrix
         </div>
         <div class="disclaimer-grid">
             <div class="disclaimer-item">
-                <h4><i class="fa-solid fa-file-powerpoint"></i> Presentations & Docs</h4>
+                <h4><i class="fa-solid fa-file-powerpoint"></i> Presentations &amp; Docs</h4>
                 <ul>
                     <li><strong>PPT / PPTX to PDF:</strong> Convert PowerPoint slides into printable PDFs.</li>
                     <li><strong>PDF to PPTX:</strong> Extract PDF pages into presentation slides.</li>
@@ -191,7 +543,7 @@
                 </ul>
             </div>
             <div class="disclaimer-item">
-                <h4><i class="fa-solid fa-image"></i> Image & Media Formats</h4>
+                <h4><i class="fa-solid fa-image"></i> Image &amp; Media Formats</h4>
                 <ul>
                     <li><strong>JPEG / JPG to PNG:</strong> Convert image extensions smoothly.</li>
                     <li><strong>HEIC to JPEG:</strong> Make iPhone photos readable on Windows/Android.</li>
@@ -208,13 +560,23 @@
             <a href="https://www.facebook.com/share/196jZuggxg/" target="_blank" class="social-icon"><i class="fa-brands fa-facebook-f"></i></a>
             <a href="mailto:vikram.2872006@gmail.com" class="social-icon"><i class="fa-solid fa-envelope"></i></a>
         </div>
-        <p style="font-size: 0.85rem; color: var(--text-muted);">Designed & Developed by <strong>Vikram Bhardwaj</strong></p>
+        <p style="font-size: 0.85rem; color: var(--text-secondary);">Designed &amp; Developed by <strong>Vikram Bhardwaj</strong></p>
     </footer>
 
     <script>
         let selectedFile = null;
         let countdownInterval;
-        let conversionController = null; // Stores ongoing request for auto-aborting
+        let conversionController = null;
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+
+            const icon = document.querySelector('#themeToggleBtn i');
+            icon.className = newTheme === 'dark' ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+        }
 
         function handleFormatSelect(e) {
             if (e.target.files.length > 0) {
@@ -232,17 +594,14 @@
             const resultBox = document.getElementById('resultBox');
             const loaderBox = document.getElementById('loaderBox');
 
-            // 1. CANCEL PREVIOUS ONGOING PROCESS IF RUNNING
             if (conversionController) {
                 conversionController.abort();
                 console.log('Previous conversion process cancelled.');
             }
 
-            // 2. CREATE NEW CONTROLLER FOR THIS REQUEST
             conversionController = new AbortController();
             const { signal } = conversionController;
 
-            // 3. UI ANIMATION STATE
             emptyPlaceholder.style.display = 'none';
             resultBox.style.display = 'none';
             loaderBox.style.display = 'flex';
@@ -259,8 +618,6 @@
                 });
 
                 const data = await res.json();
-
-                // Hide Spinner
                 loaderBox.style.display = 'none';
 
                 if (data.success) {
