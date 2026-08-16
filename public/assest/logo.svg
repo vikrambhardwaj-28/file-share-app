@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 580 130" width="100%" height="100%">
+  <defs>
+    <!-- Same Signature Gradient as markiv.site -->
+    <linearGradient id="portalAirGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f2fe" />
+      <stop offset="50%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#ec4899" />
+    </linearGradient>
+
+    <!-- Signal Glow Filter -->
+    <filter id="glowAirMarkiv" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="b" />
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <style>
+      .orbit-cw { transform-origin: 45px 45px; animation: rotateCW 8s linear infinite; }
+      .orbit-ccw { transform-origin: 45px 45px; animation: rotateCCW 12s linear infinite; }
+      .air-core-pulse { transform-origin: 45px 45px; animation: pulseAirCore 2.2s ease-in-out infinite alternate; }
+      .node-spark { animation: nodeSparkle 1.5s ease-in-out infinite alternate; }
+
+      @keyframes rotateCW { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      @keyframes rotateCCW { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+      @keyframes pulseAirCore {
+        0% { transform: scale(0.95); filter: drop-shadow(0 0 3px #00f2fe); }
+        100% { transform: scale(1.05); filter: drop-shadow(0 0 10px #ec4899); }
+      }
+      @keyframes nodeSparkle { 0% { opacity: 0.4; } 100% { opacity: 1; r: 4.5; } }
+    </style>
+  </defs>
+
+  <!-- ICON: Quantum Portal + Fast AirShare Beam -->
+  <g transform="translate(25, 18)">
+    <!-- Rotating AirShare Orbit 1 -->
+    <g class="orbit-cw">
+      <ellipse cx="45" cy="45" rx="38" ry="15" fill="none" stroke="#00f2fe" stroke-width="2.5" stroke-dasharray="6 4" transform="rotate(-30 45 45)"/>
+      <circle cx="78" cy="28" r="3.5" fill="#00f2fe" class="node-spark" filter="url(#glowAirMarkiv)"/>
+    </g>
+
+    <!-- Rotating AirShare Orbit 2 -->
+    <g class="orbit-ccw">
+      <ellipse cx="45" cy="45" rx="38" ry="15" fill="none" stroke="url(#portalAirGrad)" stroke-width="2" transform="rotate(45 45 45)"/>
+      <circle cx="12" cy="62" r="3.5" fill="#ec4899" class="node-spark"/>
+    </g>
+
+    <!-- Quantum Core: Shield Diamond with Instant Air Beam Arrow -->
+    <g class="air-core-pulse">
+      <polygon points="45,18 68,45 45,72 22,45" fill="#09090b" stroke="url(#portalAirGrad)" stroke-width="3" filter="url(#glowAirMarkiv)"/>
+      <!-- Fast-Share Beam Upward Arrow (Green to Cyan Accent) -->
+      <path d="M 45 60 L 45 30" stroke="#00ff88" stroke-width="4" stroke-linecap="round"/>
+      <polyline points="36,39 45,28 54,39" fill="none" stroke="#00ff88" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+
+  <!-- TYPOGRAPHY: air-share.markiv.site -->
+  <g transform="translate(140, 72)">
+    <text x="0" y="0" fill="#ffffff" font-family="'JetBrains Mono', 'Fira Code', monospace" font-size="44" font-weight="900" letter-spacing="-1">air</text>
+    <text x="82" y="-2" fill="#71717a" font-family="'JetBrains Mono', monospace" font-size="40" font-weight="700">-</text>
+    <text x="110" y="0" fill="url(#portalAirGrad)" font-family="'JetBrains Mono', 'Fira Code', monospace" font-size="44" font-weight="900" filter="url(#glowAirMarkiv)">share</text>
+    <text x="256" y="-14" fill="#00f2fe" font-family="-apple-system, sans-serif" font-size="14" font-weight="800" letter-spacing="0.5">.MARKIV.SITE</text>
+    
+    <line x1="0" y1="14" x2="420" y2="14" stroke="#27272a" stroke-width="1.5"/>
+    <line x1="0" y1="14" x2="160" y2="14" stroke="url(#portalAirGrad)" stroke-width="2.5"/>
+    <text x="0" y="32" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="10" font-weight="700" letter-spacing="3">P2P ENCRYPTED ZERO-LOG DROP</text>
+  </g>
+</svg>
